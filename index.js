@@ -237,6 +237,7 @@ async function showProfile(userId) {
     .select("*")
     .eq("step", "done")
     .eq("is_banned", false)
+    .eq("is_hidden", false)
     .limit(1);
 
   if (currentUser.gender && currentUser.looking_for) {
