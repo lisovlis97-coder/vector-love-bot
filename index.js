@@ -36,25 +36,28 @@ app.post("/", async (req, res) => {
     const userId = body.object.message.from_id;
     const message = body.object.message.text.toLowerCase().trim();
 
-    if (message === "старт") {
-      const { data: existingUser } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", userId)
-        .maybeSingle();
+   if (message === "старт") {
+  const { data: existingUser, error: selectError } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", userId)
+    .maybeSingle();
 
-      if (!existingUser) {
-        await supabase.from("users").insert([
-          {
-            id: userId
-          }
-        ]);
-      }
+  console.log("SELECT:", { existingUser, selectError });
 
-      await sendMessage(
-        userId,
-        "❤️ Добро пожаловать в Vector Love!\n\nТвоя анкета создана ✨\n\nСкоро добавим имя, возраст, город и фото."
-      );
+  if (!existingUser) {
+    const { data: insertData, error: insertError } = await supabase
+      .from("users")
+      .insert([{ id: userId }])
+      .select();
+
+    console.log("INSERT:", { insertData, insertError });
+  }
+
+  await sendMessage(
+    userId,
+    "❤️ Добро пожаловать в Vector Love!\n\nТвоя анкета создана ✨\n\nСкоро добавим имя, возраст, город и фото."
+  );
     } else {
       await sendMessage(
         userId,
