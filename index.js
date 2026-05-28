@@ -154,6 +154,7 @@ app.post("/", async (req, res) => {
     const userId = vkMessage.from_id;
     const text = (vkMessage.text || "").trim();
     const message = text.toLowerCase();
+    console.log("MESSAGE:", message);
 
     let user = await getUser(userId);
 
@@ -164,19 +165,34 @@ app.post("/", async (req, res) => {
     }
 
     if (message === "👀 смотреть" || message === "смотреть") {
-      if (user.step !== "done") {
-        await sendMessage(userId, "Сначала закончи анкету. Напиши «старт».");
-        return res.send("ok");
-      }
 
-      await showProfile(userId);
+  console.log("SHOW PROFILE COMMAND");
+
+  try {
+
+    if (user.step !== "done") {
+      await sendMessage(
+        userId,
+        "Сначала закончи анкету."
+      );
+
       return res.send("ok");
     }
 
-    if (message === "❤️ лайк" || message === "лайк") {
-      await handleLike(userId);
-      return res.send("ok");
-    }
+    await showProfile(userId);
+
+  } catch (e) {
+
+    console.log("SHOW PROFILE ERROR:", e);
+
+    await sendMessage(
+      userId,
+      "Ошибка загрузки анкет 😔"
+    );
+  }
+
+  return res.send("ok");
+}
 
     if (message === "👎 далее" || message === "далее") {
       await updateUser(userId, { viewing_user: null });
