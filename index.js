@@ -853,7 +853,26 @@ if (message.startsWith("код ")) {
     return;
   }
 
-  if (message === "vip" || message === "👑 vip") {
+  if (
+  message === "vip" ||
+  message === "👑 vip"
+) {
+
+  await sendMessage(
+    userId,
+    "👑 VIP — 199₽ / месяц\n\n" +
+    "Оплата через VK Donut ❤️\n\n" +
+    "После оплаты напиши в сообщения сообщества:\n" +
+    "«Хочу VIP-код»\n\n" +
+    "Ты получишь:\n" +
+    "• безлимитный просмотр анкет\n" +
+    "• доступ к «Кто лайкнул»\n" +
+    "• будущие VIP-функции 🔥",
+    keyboard()
+  );
+
+  return;
+} {
     await sendMessage(
       userId,
       "👑 VIP — 199₽\n\nПосле оплаты отправь VIP-код ❤️",
