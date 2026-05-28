@@ -8,6 +8,8 @@ app.use(express.json());
 const TOKEN = "vk1.a.DFpGODtua09zfskmdog0tBmqODJUj9lXKYhNmE3g1-waSd9V1Cmd3A1kU2HVHGcC-uaQQbwJBz98TrK8_W9gujp8qz2piuC4oTE_5jbbQNPaRhohirwd0ufQPc4dbi8xi7N2br_8MJtfCjGLSxBCwKAIiFRt9PfXR9p4CELXw1NElhWG0LS0-KPDO0Ac9M3IDVsHgdHgVcpWXMgY1nJLZw";
 const CONFIRMATION_TOKEN = "38f02508";
 
+const FREE_DAILY_LIMIT = 20;
+
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_KEY
@@ -27,7 +29,7 @@ function keyboard() {
         { action: { type: "text", label: "👑 Кто лайкнул" }, color: "secondary" }
       ],
       [
-        { action: { type: "text", label: "🔄 Заново" }, color: "secondary" }
+        { action: { type: "text", label: "📊 Лимит" }, color: "secondary" }
       ]
     ]
   });
@@ -54,6 +56,7 @@ function lookingKeyboard() {
 }
 
 async function sendMessage(userId, message, kb = null, attachment = null) {
+
   try {
 
     const params = {
@@ -121,28 +124,59 @@ function getPhotoAttachment(vkMessage) {
   return `photo${photo.owner_id}_${photo.id}`;
 }
 
+function todayDate() {
+
+  return new Date().toISOString().split("T")[0];
+}
+
+async function resetViewsIfNeeded(user) {
+
+  const today = todayDate();
+
+  if (user.last_view_date !== today) {
+
+    await updateUser(user.id, {
+      daily_views: 0,
+      last_view_date: today
+    });
+
+    user.daily_views = 0;
+    user.last_view_date = today;
+  }
+
+  return user;
+}
+
+async function canViewProfiles(user) {
+
+  if (user.is_vip) {
+    return true;
+  }
+
+  user = await resetViewsIfNeeded(user);
+
+  return user.daily_views < FREE_DAILY_LIMIT;
+}
+
+async function increaseViews(user) {
+
+  if (user.is_vip) return;
+
+  await updateUser(user.id, {
+    daily_views: (user.daily_views || 0) + 1,
+    last_view_date: todayDate()
+  });
+}
+
 async function activateVipCode(userId, code) {
 
   const upperCode = code.toUpperCase();
 
-  const { data: vipCode, error } = await supabase
+  const { data: vipCode } = await supabase
     .from("vip_codes")
     .select("*")
     .eq("code", upperCode)
     .maybeSingle();
-
-  if (error) {
-
-    console.log("VIP CODE ERROR:", error);
-
-    await sendMessage(
-      userId,
-      "Ошибка проверки VIP-кода 😔",
-      keyboard()
-    );
-
-    return true;
-  }
 
   if (!vipCode) {
 
@@ -181,7 +215,7 @@ async function activateVipCode(userId, code) {
 
   await sendMessage(
     userId,
-    "👑 VIP успешно активирован!\n\nТеперь тебе доступна функция «Кто лайкнул» ❤️",
+    "👑 VIP успешно активирован!\n\nТеперь у тебя:\n• Безлимитный просмотр\n• Кто лайкнул тебя ❤️",
     keyboard()
   );
 
@@ -190,7 +224,20 @@ async function activateVipCode(userId, code) {
 
 async function showProfile(userId) {
 
-  const currentUser = await getUser(userId);
+  let currentUser = await getUser(userId);
+
+  const allowed = await canViewProfiles(currentUser);
+
+  if (!allowed) {
+
+    await sendMessage(
+      userId,
+      `👑 Лимит просмотров закончился.\n\nБесплатно доступно ${FREE_DAILY_LIMIT} анкет в сутки.\n\nАктивируй VIP для безлимитного просмотра ❤️`,
+      keyboard()
+    );
+
+    return;
+  }
 
   const { data: liked } = await supabase
     .from("likes")
@@ -251,6 +298,10 @@ async function showProfile(userId) {
     return;
   }
 
+  await increaseViews(currentUser);
+
+  currentUser = await getUser(userId);
+
   const profile = profiles[0];
 
   await updateUser(userId, {
@@ -262,7 +313,8 @@ async function showProfile(userId) {
     `Имя: ${profile.name}\n` +
     `Возраст: ${profile.age}\n` +
     `Город: ${profile.city}\n` +
-    `О себе: ${profile.about}`;
+    `О себе: ${profile.about}\n\n` +
+    `📊 Осталось просмотров: ${currentUser.is_vip ? "∞" : Math.max(0, FREE_DAILY_LIMIT - currentUser.daily_views)}`;
 
   if (profile.photo) {
 
@@ -356,7 +408,7 @@ async function showWhoLiked(userId) {
 
     await sendMessage(
       userId,
-      "👑 VIP — 199₽\n\nПосле оплаты отправь VIP-код.\n\nС VIP ты увидишь, кто поставил тебе лайк ❤️",
+      "👑 Это VIP-функция.\n\nС VIP ты увидишь, кто поставил тебе лайк ❤️",
       keyboard()
     );
 
@@ -497,13 +549,33 @@ async function processMessage(vkMessage) {
   }
 
   if (
+    message === "лимит" ||
+    message === "📊 лимит"
+  ) {
+
+    user = await resetViewsIfNeeded(user);
+
+    const left = user.is_vip
+      ? "∞"
+      : Math.max(0, FREE_DAILY_LIMIT - (user.daily_views || 0));
+
+    await sendMessage(
+      userId,
+      `📊 Осталось просмотров сегодня: ${left}`,
+      keyboard()
+    );
+
+    return;
+  }
+
+  if (
     message === "vip" ||
     message === "👑 vip"
   ) {
 
     await sendMessage(
       userId,
-      "👑 VIP — 199₽\n\nПосле оплаты отправь VIP-код.\n\nVIP открывает:\n• Кто лайкнул тебя\n• Будущие премиум функции ❤️",
+      "👑 VIP — 199₽\n\nПосле оплаты отправь VIP-код ❤️",
       keyboard()
     );
 
