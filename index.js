@@ -31,6 +31,7 @@ function keyboard() {
       ],
       [
         { action: { type: "text", label: "🚫 Жалоба" }, color: "negative" },
+        { action: { type: "text", label: "👤 Моя анкета" }, color: "secondary" },
         { action: { type: "text", label: "📊 Лимит" }, color: "secondary" }
       ],
       [
