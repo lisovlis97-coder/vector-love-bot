@@ -6,7 +6,7 @@ const app = express();
 app.use(express.json());
 
 const TOKEN = "vk1.a.DFpGODtua09zfskmdog0tBmqODJUj9lXKYhNmE3g1-waSd9V1Cmd3A1kU2HVHGcC-uaQQbwJBz98TrK8_W9gujp8qz2piuC4oTE_5jbbQNPaRhohirwd0ufQPc4dbi8xi7N2br_8MJtfCjGLSxBCwKAIiFRt9PfXR9p4CELXw1NElhWG0LS0-KPDO0Ac9M3IDVsHgdHgVcpWXMgY1nJLZw";
-const CONFIRMATION_TOKEN = "e2f60e43";
+const CONFIRMATION_TOKEN = "38f02508";
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
