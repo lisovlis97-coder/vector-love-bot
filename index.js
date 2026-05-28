@@ -5,7 +5,7 @@ const { createClient } = require("@supabase/supabase-js");
 const app = express();
 app.use(express.json());
 
-const TOKEN = "vk1.a.DFpGODtua09zfskmdog0tBmqODJUj9lXKYhNmE3g1-waSd9V1Cmd3A1kU2HVHGcC-uaQQbwJBz98TrK8_W9gujp8qz2piuC4oTE_5jbbQNPaRhohirwd0ufQPc4dbi8xi7N2br_8MJtfCjGLSxBCwKAIiFRt9PfXR9p4CELXw1NElhWG0LS0-KPDO0Ac9M3IDVsHgdHgVcpWXMgY1nJLZw";
+const TOKEN = "ТВОЙ_ТОКЕН_ВК";
 const CONFIRMATION_TOKEN = "e2f60e43";
 
 const supabase = createClient(
@@ -18,11 +18,11 @@ function keyboard() {
     one_time: false,
     buttons: [
       [
-        { action: { type: "text", label: "❤️ Лайк" }, color: "positive" },
-        { action: { type: "text", label: "👎 Далее" }, color: "negative" }
+        { action: { type: "text", label: "👀 Смотреть" }, color: "primary" }
       ],
       [
-        { action: { type: "text", label: "👀 Смотреть" }, color: "primary" }
+        { action: { type: "text", label: "❤️ Лайк" }, color: "positive" },
+        { action: { type: "text", label: "👎 Далее" }, color: "negative" }
       ]
     ]
   });
@@ -43,50 +43,83 @@ async function sendMessage(userId, message, attachment = null, kb = null) {
 }
 
 async function getUser(userId) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("users")
     .select("*")
     .eq("id", userId)
     .maybeSingle();
+
+  if (error) console.log("GET USER ERROR:", error);
   return data;
 }
 
 async function updateUser(userId, fields) {
-  await supabase.from("users").update(fields).eq("id", userId);
+  const { error } = await supabase
+    .from("users")
+    .update(fields)
+    .eq("id", userId);
+
+  if (error) console.log("UPDATE USER ERROR:", error);
 }
 
 function getPhotoAttachment(message) {
   const attachments = message.attachments || [];
   const photoAttachment = attachments.find(item => item.type === "photo");
+
   if (!photoAttachment) return null;
+
   const photo = photoAttachment.photo;
   return `photo${photo.owner_id}_${photo.id}`;
 }
 
 async function showProfile(userId) {
-  const { data: liked } = await supabase
+  console.log("SHOW PROFILE START:", userId);
+
+  const { data: liked, error: likedError } = await supabase
     .from("likes")
     .select("to_user")
     .eq("from_user", userId);
 
+  if (likedError) {
+    console.log("LIKED ERROR:", likedError);
+  }
+
   const likedIds = liked ? liked.map(x => x.to_user) : [];
   likedIds.push(userId);
 
-  const { data: profiles } = await supabase
+  let query = supabase
     .from("users")
     .select("*")
     .eq("step", "done")
-    .not("id", "in", `(${likedIds.join(",")})`)
     .limit(1);
 
+  if (likedIds.length > 0) {
+    query = query.not("id", "in", `(${likedIds.join(",")})`);
+  }
+
+  const { data: profiles, error: profilesError } = await query;
+
+  if (profilesError) {
+    console.log("PROFILES ERROR:", profilesError);
+    await sendMessage(userId, "Ошибка загрузки анкет 😔", null, keyboard());
+    return;
+  }
+
   if (!profiles || profiles.length === 0) {
-    await sendMessage(userId, "Пока нет новых анкет 😔\n\nПопробуй позже.", null, keyboard());
+    await sendMessage(
+      userId,
+      "Пока нет новых анкет 😔\n\nНужна хотя бы ещё одна заполненная анкета.",
+      null,
+      keyboard()
+    );
     return;
   }
 
   const profile = profiles[0];
 
-  await updateUser(userId, { viewing_user: profile.id });
+  await updateUser(userId, {
+    viewing_user: profile.id
+  });
 
   await sendMessage(
     userId,
@@ -104,12 +137,18 @@ async function handleLike(userId) {
     return;
   }
 
-  await supabase.from("likes").insert([
-    {
-      from_user: userId,
-      to_user: user.viewing_user
-    }
-  ]);
+  const { error: likeError } = await supabase
+    .from("likes")
+    .insert([
+      {
+        from_user: userId,
+        to_user: user.viewing_user
+      }
+    ]);
+
+  if (likeError) {
+    console.log("LIKE ERROR:", likeError);
+  }
 
   const { data: match } = await supabase
     .from("likes")
@@ -154,64 +193,92 @@ app.post("/", async (req, res) => {
     const userId = vkMessage.from_id;
     const text = (vkMessage.text || "").trim();
     const message = text.toLowerCase();
-    console.log("MESSAGE:", message);
+
+    console.log("MESSAGE:", {
+      userId,
+      text,
+      message
+    });
 
     let user = await getUser(userId);
 
     if (!user) {
-      await supabase.from("users").insert([{ id: userId, step: "name" }]);
-      await sendMessage(userId, "❤️ Добро пожаловать в Vector Love!\n\nНапиши свое имя 👇");
-      return res.send("ok");
-    }
+      await supabase.from("users").insert([
+        {
+          id: userId,
+          step: "name"
+        }
+      ]);
 
-    if (message === "👀 смотреть" || message === "смотреть") {
-
-  console.log("SHOW PROFILE COMMAND");
-
-  try {
-
-    if (user.step !== "done") {
       await sendMessage(
         userId,
-        "Сначала закончи анкету."
+        "❤️ Добро пожаловать в Vector Love!\n\nДавай создадим твою анкету.\n\nНапиши свое имя 👇"
       );
 
       return res.send("ok");
     }
 
-    await showProfile(userId);
+    if (message === "👀 смотреть" || message === "смотреть") {
+      console.log("COMMAND: SHOW");
 
-  } catch (e) {
+      if (user.step !== "done") {
+        await sendMessage(userId, "Сначала закончи анкету.", null, keyboard());
+        return res.send("ok");
+      }
 
-    console.log("SHOW PROFILE ERROR:", e);
+      await showProfile(userId);
+      return res.send("ok");
+    }
 
-    await sendMessage(
-      userId,
-      "Ошибка загрузки анкет 😔"
-    );
-  }
-
-  return res.send("ok");
-}
+    if (message === "❤️ лайк" || message === "лайк") {
+      console.log("COMMAND: LIKE");
+      await handleLike(userId);
+      return res.send("ok");
+    }
 
     if (message === "👎 далее" || message === "далее") {
+      console.log("COMMAND: NEXT");
       await updateUser(userId, { viewing_user: null });
       await showProfile(userId);
       return res.send("ok");
     }
 
     if ((message === "старт" || message === "начать") && user.step === "done") {
-      await sendMessage(userId, "❤️ Твоя анкета уже создана.\n\nНажми «👀 Смотреть».", null, keyboard());
+      await sendMessage(
+        userId,
+        "❤️ Твоя анкета уже создана.\n\nНажми «👀 Смотреть».",
+        null,
+        keyboard()
+      );
+
       return res.send("ok");
     }
 
-    if ((message === "старт" || message === "начать") && user.step !== "done") {
-      await sendMessage(userId, "Продолжаем анкету 👇");
+    if (message === "старт" || message === "начать") {
+      if (user.step === "name") {
+        await sendMessage(userId, "Напиши свое имя 👇");
+      } else if (user.step === "age") {
+        await sendMessage(userId, "Сколько тебе лет? 🔞");
+      } else if (user.step === "city") {
+        await sendMessage(userId, "Из какого ты города? 🏙");
+      } else if (user.step === "about") {
+        await sendMessage(userId, "Расскажи коротко о себе ✨");
+      } else if (user.step === "photo") {
+        await sendMessage(userId, "Отправь свое фото для анкеты 📸");
+      } else {
+        await updateUser(userId, { step: "name" });
+        await sendMessage(userId, "Напиши свое имя 👇");
+      }
+
       return res.send("ok");
     }
 
     if (user.step === "name") {
-      await updateUser(userId, { name: text, step: "age" });
+      await updateUser(userId, {
+        name: text,
+        step: "age"
+      });
+
       await sendMessage(userId, "Сколько тебе лет? 🔞");
       return res.send("ok");
     }
@@ -224,19 +291,31 @@ app.post("/", async (req, res) => {
         return res.send("ok");
       }
 
-      await updateUser(userId, { age, step: "city" });
+      await updateUser(userId, {
+        age,
+        step: "city"
+      });
+
       await sendMessage(userId, "Из какого ты города? 🏙");
       return res.send("ok");
     }
 
     if (user.step === "city") {
-      await updateUser(userId, { city: text, step: "about" });
+      await updateUser(userId, {
+        city: text,
+        step: "about"
+      });
+
       await sendMessage(userId, "Расскажи коротко о себе ✨");
       return res.send("ok");
     }
 
     if (user.step === "about") {
-      await updateUser(userId, { about: text, step: "photo" });
+      await updateUser(userId, {
+        about: text,
+        step: "photo"
+      });
+
       await sendMessage(userId, "Отлично 🔥\n\nТеперь отправь свое фото для анкеты 📸");
       return res.send("ok");
     }
@@ -249,7 +328,10 @@ app.post("/", async (req, res) => {
         return res.send("ok");
       }
 
-      await updateUser(userId, { photo, step: "done" });
+      await updateUser(userId, {
+        photo,
+        step: "done"
+      });
 
       const finalUser = await getUser(userId);
 
@@ -263,7 +345,10 @@ app.post("/", async (req, res) => {
       return res.send("ok");
     }
 
-    await sendMessage(userId, "Нажми «👀 Смотреть» или напиши «смотреть».", null, keyboard());
+    if (user.step === "done") {
+      await sendMessage(userId, "Нажми «👀 Смотреть» или напиши «смотреть».", null, keyboard());
+      return res.send("ok");
+    }
   }
 
   return res.send("ok");
