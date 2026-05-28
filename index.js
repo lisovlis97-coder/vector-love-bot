@@ -25,6 +25,23 @@ async function sendMessage(userId, message) {
   });
 }
 
+async function getUser(userId) {
+  const { data } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", userId)
+    .maybeSingle();
+
+  return data;
+}
+
+async function updateUser(userId, fields) {
+  await supabase
+    .from("users")
+    .update(fields)
+    .eq("id", userId);
+}
+
 app.post("/", async (req, res) => {
   const body = req.body;
 
@@ -34,36 +51,90 @@ app.post("/", async (req, res) => {
 
   if (body.type === "message_new") {
     const userId = body.object.message.from_id;
-    const message = body.object.message.text.toLowerCase().trim();
+    const text = body.object.message.text.trim();
+    const message = text.toLowerCase();
 
-   if (message === "старт") {
-  const { data: existingUser, error: selectError } = await supabase
-    .from("users")
-    .select("*")
-    .eq("id", userId)
-    .maybeSingle();
+    let user = await getUser(userId);
 
-  console.log("SELECT:", { existingUser, selectError });
+    if (message === "старт" || message === "начать") {
+      if (!user) {
+        await supabase.from("users").insert([{ id: userId }]);
+        user = await getUser(userId);
+      }
 
-  if (!existingUser) {
-    const { data: insertData, error: insertError } = await supabase
-      .from("users")
-      .insert([{ id: userId }])
-      .select();
-
-    console.log("INSERT:", { insertData, insertError });
-  }
-
-  await sendMessage(
-    userId,
-    "❤️ Добро пожаловать в Vector Love!\n\nТвоя анкета создана ✨\n\nСкоро добавим имя, возраст, город и фото."
-  );
-    } else {
       await sendMessage(
         userId,
-        "✨ Напиши «старт», чтобы начать."
+        "❤️ Добро пожаловать в Vector Love!\n\nДавай создадим твою анкету.\n\nНапиши свое имя 👇"
       );
+
+      await updateUser(userId, { about: "step_name" });
+      return res.send("ok");
     }
+
+    if (!user) {
+      await sendMessage(userId, "✨ Напиши «старт», чтобы начать.");
+      return res.send("ok");
+    }
+
+    if (user.about === "step_name") {
+      await updateUser(userId, {
+        name: text,
+        about: "step_age"
+      });
+
+      await sendMessage(userId, "Сколько тебе лет? 🔞");
+      return res.send("ok");
+    }
+
+    if (user.about === "step_age") {
+      const age = parseInt(text);
+
+      if (!age || age < 18 || age > 80) {
+        await sendMessage(userId, "Напиши возраст цифрами. Только 18+.");
+        return res.send("ok");
+      }
+
+      await updateUser(userId, {
+        age,
+        about: "step_city"
+      });
+
+      await sendMessage(userId, "Из какого ты города? 🏙");
+      return res.send("ok");
+    }
+
+    if (user.about === "step_city") {
+      await updateUser(userId, {
+        city: text,
+        about: "step_about"
+      });
+
+      await sendMessage(
+        userId,
+        "Расскажи коротко о себе: хобби, интересы, кого хочешь найти ✨"
+      );
+      return res.send("ok");
+    }
+
+    if (user.about === "step_about") {
+      await updateUser(userId, {
+        about: text
+      });
+
+      const finalUser = await getUser(userId);
+
+      await sendMessage(
+        userId,
+        `🔥 Анкета готова!\n\nИмя: ${finalUser.name}\nВозраст: ${finalUser.age}\nГород: ${finalUser.city}\nО себе: ${finalUser.about}\n\nСкоро добавим фото, лайки и просмотр анкет ❤️`
+      );
+
+      return res.send("ok");
+    }
+
+    await sendMessage(
+      userId,
+      "✨ Анкета уже создана.\n\nСкоро добавим просмотр людей и лайки ❤️"
+    );
   }
 
   return res.send("ok");
