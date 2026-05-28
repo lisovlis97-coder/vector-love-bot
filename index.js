@@ -797,6 +797,15 @@ if (message.startsWith("код ")) {
     return;
   }
 
+  if (
+  message === "моя анкета" ||
+  message === "👤 моя анкета"
+) {
+
+  await showMyProfile(userId);
+
+  return;
+}
   if (message === "лимит" || message === "📊 лимит") {
     user = await resetViewsIfNeeded(user);
 
