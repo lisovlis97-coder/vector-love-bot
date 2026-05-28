@@ -5,7 +5,7 @@ const { createClient } = require("@supabase/supabase-js");
 const app = express();
 app.use(express.json());
 
-const TOKEN = "vk1.a.DFpGODtua09zfskmdog0tBmqODJUj9lXKYhNmE3g1-waSd9V1Cmd3A1kU2HVHGcC-uaQQbwJBz98TrK8_W9gujp8qz2piuC4oTE_5jbbQNPaRhohirwd0ufQPc4dbi8xi7N2br_8MJtfCjGLSxBCwKAIiFRt9PfXR9p4CELXw1NElhWG0LS0-KPDO0Ac9M3IDVsHgdHgVcpWXMgY1nJLZw";
+const TOKEN = "ТВОЙ_ТОКЕН_ВК";
 const CONFIRMATION_TOKEN = "38f02508";
 
 const supabase = createClient(
@@ -47,7 +47,7 @@ function lookingKeyboard() {
   });
 }
 
-async function sendMessage(userId, message, kb = null) {
+async function sendMessage(userId, message, kb = null, attachment = null) {
   try {
     const params = {
       user_id: userId,
@@ -58,6 +58,7 @@ async function sendMessage(userId, message, kb = null) {
     };
 
     if (kb) params.keyboard = kb;
+    if (attachment) params.attachment = attachment;
 
     const response = await axios.post(
       "https://api.vk.com/method/messages.send",
@@ -67,9 +68,13 @@ async function sendMessage(userId, message, kb = null) {
 
     if (response.data.error) {
       console.log("VK SEND ERROR:", response.data.error);
+      return false;
     }
+
+    return true;
   } catch (e) {
     console.log("SEND ERROR:", e.response?.data || e.message);
+    return false;
   }
 }
 
@@ -96,7 +101,9 @@ async function updateUser(userId, fields) {
 function getPhotoAttachment(vkMessage) {
   const attachments = vkMessage.attachments || [];
   const photoAttachment = attachments.find(item => item.type === "photo");
+
   if (!photoAttachment) return null;
+
   const photo = photoAttachment.photo;
   return `photo${photo.owner_id}_${photo.id}`;
 }
@@ -117,9 +124,13 @@ async function showProfile(userId) {
       .from("users")
       .select("*")
       .eq("step", "done")
-      .eq("gender", currentUser.looking_for)
-      .eq("looking_for", currentUser.gender)
       .limit(1);
+
+    if (currentUser.gender && currentUser.looking_for) {
+      query = query
+        .eq("gender", currentUser.looking_for)
+        .eq("looking_for", currentUser.gender);
+    }
 
     query = query.not("id", "in", `(${likedIds.join(",")})`);
 
@@ -134,7 +145,7 @@ async function showProfile(userId) {
     if (!profiles || profiles.length === 0) {
       await sendMessage(
         userId,
-        "Пока нет подходящих анкет 😔\n\nПопробуй позже или нажми «🔄 Заново», чтобы изменить параметры.",
+        "Пока нет подходящих анкет 😔\n\nПопробуй позже или нажми «🔄 Заново».",
         keyboard()
       );
       return;
@@ -144,11 +155,29 @@ async function showProfile(userId) {
 
     await updateUser(userId, { viewing_user: profile.id });
 
-    await sendMessage(
-      userId,
-      `✨ Анкета\n\nИмя: ${profile.name}\nВозраст: ${profile.age}\nГород: ${profile.city}\nО себе: ${profile.about}`,
-      keyboard()
-    );
+    const cardText =
+      `✨ Анкета\n\n` +
+      `Имя: ${profile.name || "Не указано"}\n` +
+      `Возраст: ${profile.age || "Не указан"}\n` +
+      `Город: ${profile.city || "Не указан"}\n` +
+      `О себе: ${profile.about || "Не указано"}`;
+
+    if (profile.photo) {
+      const sentWithPhoto = await sendMessage(
+        userId,
+        cardText,
+        keyboard(),
+        profile.photo
+      );
+
+      if (!sentWithPhoto) {
+        await sendMessage(userId, cardText, keyboard());
+      }
+
+      return;
+    }
+
+    await sendMessage(userId, cardText, keyboard());
   } catch (e) {
     console.log("SHOW PROFILE CRASH:", e);
     await sendMessage(userId, "Критическая ошибка загрузки анкет 😔", keyboard());
@@ -252,12 +281,23 @@ async function processMessage(vkMessage) {
   }
 
   if ((message === "старт" || message === "начать") && user.step === "done") {
-    await sendMessage(userId, "❤️ Твоя анкета уже создана.\n\nНажми «👀 Смотреть» или «🔄 Заново».", keyboard());
+    await sendMessage(
+      userId,
+      "❤️ Твоя анкета уже создана.\n\nНажми «👀 Смотреть» или «🔄 Заново».",
+      keyboard()
+    );
     return;
   }
 
   if (message === "старт" || message === "начать") {
-    await sendMessage(userId, "Продолжаем анкету 👇");
+    if (user.step === "name") await sendMessage(userId, "Напиши свое имя 👇");
+    else if (user.step === "age") await sendMessage(userId, "Сколько тебе лет? 🔞");
+    else if (user.step === "city") await sendMessage(userId, "Из какого ты города? 🏙");
+    else if (user.step === "gender") await sendMessage(userId, "Кто ты?", genderKeyboard());
+    else if (user.step === "looking_for") await sendMessage(userId, "Кого хочешь найти?", lookingKeyboard());
+    else if (user.step === "about") await sendMessage(userId, "Расскажи коротко о себе ✨");
+    else if (user.step === "photo") await sendMessage(userId, "Отправь свое фото для анкеты 📸");
+    else await sendMessage(userId, "Нажми «👀 Смотреть» или «🔄 Заново».", keyboard());
     return;
   }
 
