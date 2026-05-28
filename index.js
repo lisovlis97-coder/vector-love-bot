@@ -31,20 +31,34 @@ async function sendMessage(userId, message) {
 }
 
 async function getUser(userId) {
-  const { data } = await supabase
+
+  const { data, error } = await supabase
     .from("users")
     .select("*")
     .eq("id", userId)
     .maybeSingle();
 
+  console.log("GET USER:", {
+    data,
+    error
+  });
+
   return data;
 }
 
 async function updateUser(userId, fields) {
-  await supabase
+
+  const { data, error } = await supabase
     .from("users")
     .update(fields)
     .eq("id", userId);
+
+  console.log("UPDATE USER:", {
+    userId,
+    fields,
+    data,
+    error
+  });
 }
 
 app.post("/", async (req, res) => {
@@ -61,7 +75,15 @@ app.post("/", async (req, res) => {
     const text = body.object.message.text.trim();
     const message = text.toLowerCase();
 
+    console.log("NEW MESSAGE:", {
+      userId,
+      text,
+      message
+    });
+
     let user = await getUser(userId);
+
+    console.log("USER FROM DB:", user);
 
     // СТАРТ
 
@@ -69,13 +91,18 @@ app.post("/", async (req, res) => {
 
       if (!user) {
 
-        await supabase
+        const { data, error } = await supabase
           .from("users")
           .insert([
             {
               id: userId
             }
           ]);
+
+        console.log("INSERT USER:", {
+          data,
+          error
+        });
 
         user = await getUser(userId);
       }
@@ -92,7 +119,7 @@ app.post("/", async (req, res) => {
       return res.send("ok");
     }
 
-    // ЕСЛИ ПОЛЬЗОВАТЕЛЯ НЕТ
+    // НЕТ ПОЛЬЗОВАТЕЛЯ
 
     if (!user) {
 
@@ -107,6 +134,8 @@ app.post("/", async (req, res) => {
     // ИМЯ
 
     if (user.step === "name") {
+
+      console.log("STEP NAME");
 
       await updateUser(userId, {
         name: text,
@@ -124,6 +153,8 @@ app.post("/", async (req, res) => {
     // ВОЗРАСТ
 
     if (user.step === "age") {
+
+      console.log("STEP AGE");
 
       const age = parseInt(text);
 
@@ -154,6 +185,8 @@ app.post("/", async (req, res) => {
 
     if (user.step === "city") {
 
+      console.log("STEP CITY");
+
       await updateUser(userId, {
         city: text,
         step: "about"
@@ -171,6 +204,8 @@ app.post("/", async (req, res) => {
 
     if (user.step === "about") {
 
+      console.log("STEP ABOUT");
+
       await updateUser(userId, {
         about: text,
         step: "done"
@@ -186,9 +221,11 @@ app.post("/", async (req, res) => {
       return res.send("ok");
     }
 
-    // ГОТОВАЯ АНКЕТА
+    // ГОТОВО
 
     if (user.step === "done") {
+
+      console.log("STEP DONE");
 
       await sendMessage(
         userId,
