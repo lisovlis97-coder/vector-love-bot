@@ -342,12 +342,19 @@ async function handleLike(userId) {
       keyboard()
     );
   } else {
-    await sendMessage(
-      userId,
-      "❤️ Лайк отправлен!",
-      keyboard()
-    );
-  }
+
+  await sendMessage(
+    userId,
+    "❤️ Лайк отправлен!",
+    keyboard()
+  );
+
+  await sendMessage(
+    targetId,
+    "❤️ Тебя кто-то лайкнул!\n\nНажми «👑 Кто лайкнул», чтобы посмотреть.",
+    keyboard()
+  );
+}
 
   await updateUser(userId, {
     viewing_user: null
