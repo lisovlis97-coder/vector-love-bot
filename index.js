@@ -13,12 +13,13 @@ const supabase = createClient(
   process.env.SUPABASE_KEY
 );
 
-async function sendMessage(userId, message) {
+async function sendMessage(userId, message, attachment = null) {
   await axios.post("https://api.vk.com/method/messages.send", null, {
     params: {
       user_id: userId,
       random_id: Date.now(),
       message,
+      attachment,
       access_token: TOKEN,
       v: "5.199"
     }
@@ -44,6 +45,17 @@ async function updateUser(userId, fields) {
   if (error) console.log("UPDATE ERROR:", error);
 }
 
+function getPhotoAttachment(message) {
+  const attachments = message.attachments || [];
+  const photoAttachment = attachments.find(item => item.type === "photo");
+
+  if (!photoAttachment) return null;
+
+  const photo = photoAttachment.photo;
+
+  return `photo${photo.owner_id}_${photo.id}`;
+}
+
 app.post("/", async (req, res) => {
   const body = req.body;
 
@@ -52,8 +64,9 @@ app.post("/", async (req, res) => {
   }
 
   if (body.type === "message_new") {
-    const userId = body.object.message.from_id;
-    const text = body.object.message.text.trim();
+    const vkMessage = body.object.message;
+    const userId = vkMessage.from_id;
+    const text = (vkMessage.text || "").trim();
     const message = text.toLowerCase();
 
     let user = await getUser(userId);
@@ -87,6 +100,8 @@ app.post("/", async (req, res) => {
         await sendMessage(userId, "Из какого ты города? 🏙");
       } else if (user.step === "about") {
         await sendMessage(userId, "Расскажи коротко о себе ✨");
+      } else if (user.step === "photo") {
+        await sendMessage(userId, "Отправь свое фото для анкеты 📸");
       } else {
         await updateUser(userId, { step: "name" });
         await sendMessage(userId, "Напиши свое имя 👇");
@@ -135,6 +150,23 @@ app.post("/", async (req, res) => {
     if (user.step === "about") {
       await updateUser(userId, {
         about: text,
+        step: "photo"
+      });
+
+      await sendMessage(userId, "Отлично 🔥\n\nТеперь отправь свое фото для анкеты 📸");
+      return res.send("ok");
+    }
+
+    if (user.step === "photo") {
+      const photo = getPhotoAttachment(vkMessage);
+
+      if (!photo) {
+        await sendMessage(userId, "Нужно отправить именно фото 📸");
+        return res.send("ok");
+      }
+
+      await updateUser(userId, {
+        photo,
         step: "done"
       });
 
@@ -142,7 +174,8 @@ app.post("/", async (req, res) => {
 
       await sendMessage(
         userId,
-        `🔥 Анкета готова!\n\nИмя: ${finalUser.name}\nВозраст: ${finalUser.age}\nГород: ${finalUser.city}\nО себе: ${finalUser.about}\n\nСкоро добавим фото, лайки и просмотр анкет ❤️`
+        `🔥 Анкета готова!\n\nИмя: ${finalUser.name}\nВозраст: ${finalUser.age}\nГород: ${finalUser.city}\nО себе: ${finalUser.about}\n\nСкоро добавим просмотр анкет и лайки ❤️`,
+        photo
       );
 
       return res.send("ok");
