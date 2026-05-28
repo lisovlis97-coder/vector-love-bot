@@ -424,6 +424,35 @@ async function handleReport(userId) {
   await showProfile(userId);
 }
 
+async function toggleHidden(userId) {
+
+  const user = await getUser(userId);
+
+  if (!user) {
+    await sendMessage(userId, "Анкета не найдена.");
+    return;
+  }
+
+  const newStatus = !user.is_hidden;
+
+  await updateUser(userId, {
+    is_hidden: newStatus
+  });
+
+  if (newStatus) {
+    await sendMessage(
+      userId,
+      "🙈 Анкета скрыта.\n\nТеперь она не будет показываться другим пользователям.",
+      keyboard()
+    );
+  } else {
+    await sendMessage(
+      userId,
+      "👀 Анкета снова видна другим пользователям.",
+      keyboard()
+    );
+  }
+}
 async function showMyProfile(userId) {
 
   const user = await getUser(userId);
@@ -833,6 +862,15 @@ if (message.startsWith("код ")) {
     return;
   }
 
+  if (
+  message === "скрыть" ||
+  message === "🙈 скрыть"
+) {
+
+  await toggleHidden(userId);
+
+  return;
+}
   if (message === "заново" || message === "🔄 заново") {
     await updateUser(userId, {
       name: null,
