@@ -73,60 +73,77 @@ function getPhotoAttachment(message) {
 }
 
 async function showProfile(userId) {
-  console.log("SHOW PROFILE START:", userId);
+  try {
+    console.log("SHOW PROFILE START:", userId);
 
-  const { data: liked, error: likedError } = await supabase
-    .from("likes")
-    .select("to_user")
-    .eq("from_user", userId);
+    const { data: liked, error: likedError } = await supabase
+      .from("likes")
+      .select("to_user")
+      .eq("from_user", userId);
 
-  if (likedError) {
+    console.log("LIKED:", liked);
     console.log("LIKED ERROR:", likedError);
-  }
 
-  const likedIds = liked ? liked.map(x => x.to_user) : [];
-  likedIds.push(userId);
+    const likedIds = liked ? liked.map(x => x.to_user) : [];
+    likedIds.push(userId);
 
-  let query = supabase
-    .from("users")
-    .select("*")
-    .eq("step", "done")
-    .limit(1);
+    console.log("LIKED IDS:", likedIds);
 
-  if (likedIds.length > 0) {
-    query = query.not("id", "in", `(${likedIds.join(",")})`);
-  }
+    let query = supabase
+      .from("users")
+      .select("*")
+      .eq("step", "done")
+      .limit(1);
 
-  const { data: profiles, error: profilesError } = await query;
+    if (likedIds.length > 0) {
+      query = query.not("id", "in", `(${likedIds.join(",")})`);
+    }
 
-  if (profilesError) {
+    const { data: profiles, error: profilesError } = await query;
+
+    console.log("PROFILES:", profiles);
     console.log("PROFILES ERROR:", profilesError);
-    await sendMessage(userId, "Ошибка загрузки анкет 😔", null, keyboard());
-    return;
-  }
 
-  if (!profiles || profiles.length === 0) {
+    if (profilesError) {
+      await sendMessage(userId, "Ошибка загрузки анкет 😔", null, keyboard());
+      return;
+    }
+
+    if (!profiles || profiles.length === 0) {
+      await sendMessage(
+        userId,
+        "Пока нет новых анкет 😔\n\nНужна хотя бы ещё одна заполненная анкета.",
+        null,
+        keyboard()
+      );
+      return;
+    }
+
+    const profile = profiles[0];
+
+    console.log("PROFILE:", profile);
+
+    await updateUser(userId, {
+      viewing_user: profile.id
+    });
+
     await sendMessage(
       userId,
-      "Пока нет новых анкет 😔\n\nНужна хотя бы ещё одна заполненная анкета.",
+      `✨ Анкета\n\nИмя: ${profile.name}\nВозраст: ${profile.age}\nГород: ${profile.city}\nО себе: ${profile.about}`,
+      profile.photo,
+      keyboard()
+    );
+
+  } catch (e) {
+    console.log("SHOW PROFILE CRASH:", e);
+
+    await sendMessage(
+      userId,
+      "Критическая ошибка при загрузке анкет 😔",
       null,
       keyboard()
     );
-    return;
   }
-
-  const profile = profiles[0];
-
-  await updateUser(userId, {
-    viewing_user: profile.id
-  });
-
-  await sendMessage(
-    userId,
-    `✨ Анкета\n\nИмя: ${profile.name}\nВозраст: ${profile.age}\nГород: ${profile.city}\nО себе: ${profile.about}`,
-    profile.photo,
-    keyboard()
-  );
 }
 
 async function handleLike(userId) {
