@@ -9,6 +9,11 @@ const TOKEN = "vk1.a.DFpGODtua09zfskmdog0tBmqODJUj9lXKYhNmE3g1-waSd9V1Cmd3A1kU2H
 const CONFIRMATION_TOKEN = "38f02508";
 
 const FREE_DAILY_LIMIT = 20;
+const ADMIN_IDS = [302920827];
+
+function isAdmin(userId) {
+  return ADMIN_IDS.includes(userId);
+}
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -410,6 +415,145 @@ async function handleReport(userId) {
   await showProfile(userId);
 }
 
+async function showAdminPanel(userId) {
+  if (!isAdmin(userId)) {
+    await sendMessage(userId, "Нет доступа.");
+    return;
+  }
+
+  const { count: totalUsers } = await supabase
+    .from("users")
+    .select("*", { count: "exact", head: true });
+
+  const { count: readyProfiles } = await supabase
+    .from("users")
+    .select("*", { count: "exact", head: true })
+    .eq("step", "done");
+
+  const { count: vipUsers } = await supabase
+    .from("users")
+    .select("*", { count: "exact", head: true })
+    .eq("is_vip", true);
+
+  const { count: bannedUsers } = await supabase
+    .from("users")
+    .select("*", { count: "exact", head: true })
+    .eq("is_banned", true);
+
+  const { count: reportsCount } = await supabase
+    .from("reports")
+    .select("*", { count: "exact", head: true });
+
+  await sendMessage(
+    userId,
+    `🛠 Админка Vector Love\n\n` +
+    `👥 Пользователей всего: ${totalUsers || 0}\n` +
+    `✅ Готовых анкет: ${readyProfiles || 0}\n` +
+    `👑 VIP: ${vipUsers || 0}\n` +
+    `🚫 Забанено: ${bannedUsers || 0}\n` +
+    `⚠️ Жалоб всего: ${reportsCount || 0}\n\n` +
+    `Команды:\n` +
+    `статистика\n` +
+    `жалобы\n` +
+    `выдать vip ID\n` +
+    `бан ID\n` +
+    `разбан ID\n` +
+    `код VIP-XXX`
+  );
+}
+
+async function showReports(userId) {
+  if (!isAdmin(userId)) {
+    await sendMessage(userId, "Нет доступа.");
+    return;
+  }
+
+  const { data: reports, error } = await supabase
+    .from("reports")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  if (error) {
+    await sendMessage(userId, "Ошибка загрузки жалоб.");
+    return;
+  }
+
+  if (!reports || reports.length === 0) {
+    await sendMessage(userId, "Жалоб пока нет.");
+    return;
+  }
+
+  let text = "⚠️ Последние жалобы:\n\n";
+
+  for (const report of reports) {
+    text +=
+      `От: ${report.from_user}\n` +
+      `На: ${report.to_user}\n` +
+      `Причина: ${report.reason || "не указана"}\n\n`;
+  }
+
+  await sendMessage(userId, text);
+}
+
+async function giveVip(adminId, targetId) {
+  if (!isAdmin(adminId)) {
+    await sendMessage(adminId, "Нет доступа.");
+    return;
+  }
+
+  await updateUser(targetId, { is_vip: true });
+
+  await sendMessage(adminId, `👑 VIP выдан пользователю ${targetId}.`);
+
+  await sendMessage(
+    targetId,
+    "👑 Администратор выдал тебе VIP.\n\nТеперь доступны премиум-функции ❤️",
+    keyboard()
+  );
+}
+
+async function banUser(adminId, targetId) {
+  if (!isAdmin(adminId)) {
+    await sendMessage(adminId, "Нет доступа.");
+    return;
+  }
+
+  await updateUser(targetId, { is_banned: true });
+
+  await sendMessage(adminId, `🚫 Пользователь ${targetId} забанен.`);
+}
+
+async function unbanUser(adminId, targetId) {
+  if (!isAdmin(adminId)) {
+    await sendMessage(adminId, "Нет доступа.");
+    return;
+  }
+
+  await updateUser(targetId, { is_banned: false });
+
+  await sendMessage(adminId, `✅ Пользователь ${targetId} разбанен.`);
+}
+
+async function createVipCode(adminId, code) {
+  if (!isAdmin(adminId)) {
+    await sendMessage(adminId, "Нет доступа.");
+    return;
+  }
+
+  const upperCode = code.toUpperCase();
+
+  const { error } = await supabase
+    .from("vip_codes")
+    .insert([{ code: upperCode }]);
+
+  if (error) {
+    await sendMessage(adminId, "Такой код уже есть или ошибка создания.");
+    return;
+  }
+
+  await sendMessage(adminId, `✅ VIP-код создан:\n${upperCode}`);
+}
 async function showWhoLiked(userId) {
   const user = await getUser(userId);
 
@@ -464,6 +608,63 @@ async function processMessage(vkMessage) {
 
   let user = await getUser(userId);
 
+  if (message === "админ" || message === "статистика") {
+  await showAdminPanel(userId);
+  return;
+}
+
+if (message === "жалобы") {
+  await showReports(userId);
+  return;
+}
+
+if (message.startsWith("выдать vip ")) {
+  const targetId = Number(message.replace("выдать vip ", "").trim());
+
+  if (!targetId) {
+    await sendMessage(userId, "Напиши так: выдать vip 302920827");
+    return;
+  }
+
+  await giveVip(userId, targetId);
+  return;
+}
+
+if (message.startsWith("бан ")) {
+  const targetId = Number(message.replace("бан ", "").trim());
+
+  if (!targetId) {
+    await sendMessage(userId, "Напиши так: бан 302920827");
+    return;
+  }
+
+  await banUser(userId, targetId);
+  return;
+}
+
+if (message.startsWith("разбан ")) {
+  const targetId = Number(message.replace("разбан ", "").trim());
+
+  if (!targetId) {
+    await sendMessage(userId, "Напиши так: разбан 302920827");
+    return;
+  }
+
+  await unbanUser(userId, targetId);
+  return;
+}
+
+if (message.startsWith("код ")) {
+  const code = text.replace("код ", "").trim();
+
+  if (!code) {
+    await sendMessage(userId, "Напиши так: код VIP-NEW-199");
+    return;
+  }
+
+  await createVipCode(userId, code);
+  return;
+}
   if (text.toUpperCase().startsWith("VIP-")) {
     await activateVipCode(userId, text);
     return;
