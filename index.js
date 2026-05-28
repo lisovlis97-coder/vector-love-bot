@@ -39,6 +39,7 @@ function keyboard() {
         { action: { type: "text", label: "👑 Кто лайкнул" }, color: "secondary" }
       ],
       [
+        { action: { type: "text", label: "🙈 Скрыть" }, color: "secondary" },
         { action: { type: "text", label: "🔄 Заново" }, color: "secondary" }
       ]
     ]
