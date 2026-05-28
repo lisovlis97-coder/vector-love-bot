@@ -13,13 +13,29 @@ const supabase = createClient(
   process.env.SUPABASE_KEY
 );
 
-async function sendMessage(userId, message, attachment = null) {
+function keyboard() {
+  return JSON.stringify({
+    one_time: false,
+    buttons: [
+      [
+        { action: { type: "text", label: "❤️ Лайк" }, color: "positive" },
+        { action: { type: "text", label: "👎 Далее" }, color: "negative" }
+      ],
+      [
+        { action: { type: "text", label: "👀 Смотреть" }, color: "primary" }
+      ]
+    ]
+  });
+}
+
+async function sendMessage(userId, message, attachment = null, kb = null) {
   await axios.post("https://api.vk.com/method/messages.send", null, {
     params: {
       user_id: userId,
       random_id: Date.now(),
       message,
       attachment,
+      keyboard: kb,
       access_token: TOKEN,
       v: "5.199"
     }
@@ -32,28 +48,98 @@ async function getUser(userId) {
     .select("*")
     .eq("id", userId)
     .maybeSingle();
-
   return data;
 }
 
 async function updateUser(userId, fields) {
-  const { error } = await supabase
-    .from("users")
-    .update(fields)
-    .eq("id", userId);
-
-  if (error) console.log("UPDATE ERROR:", error);
+  await supabase.from("users").update(fields).eq("id", userId);
 }
 
 function getPhotoAttachment(message) {
   const attachments = message.attachments || [];
   const photoAttachment = attachments.find(item => item.type === "photo");
-
   if (!photoAttachment) return null;
-
   const photo = photoAttachment.photo;
-
   return `photo${photo.owner_id}_${photo.id}`;
+}
+
+async function showProfile(userId) {
+  const { data: liked } = await supabase
+    .from("likes")
+    .select("to_user")
+    .eq("from_user", userId);
+
+  const likedIds = liked ? liked.map(x => x.to_user) : [];
+  likedIds.push(userId);
+
+  const { data: profiles } = await supabase
+    .from("users")
+    .select("*")
+    .eq("step", "done")
+    .not("id", "in", `(${likedIds.join(",")})`)
+    .limit(1);
+
+  if (!profiles || profiles.length === 0) {
+    await sendMessage(userId, "Пока нет новых анкет 😔\n\nПопробуй позже.", null, keyboard());
+    return;
+  }
+
+  const profile = profiles[0];
+
+  await updateUser(userId, { viewing_user: profile.id });
+
+  await sendMessage(
+    userId,
+    `✨ Анкета\n\nИмя: ${profile.name}\nВозраст: ${profile.age}\nГород: ${profile.city}\nО себе: ${profile.about}`,
+    profile.photo,
+    keyboard()
+  );
+}
+
+async function handleLike(userId) {
+  const user = await getUser(userId);
+
+  if (!user || !user.viewing_user) {
+    await sendMessage(userId, "Сначала нажми «👀 Смотреть».", null, keyboard());
+    return;
+  }
+
+  await supabase.from("likes").insert([
+    {
+      from_user: userId,
+      to_user: user.viewing_user
+    }
+  ]);
+
+  const { data: match } = await supabase
+    .from("likes")
+    .select("*")
+    .eq("from_user", user.viewing_user)
+    .eq("to_user", userId)
+    .maybeSingle();
+
+  if (match) {
+    const otherUser = await getUser(user.viewing_user);
+
+    await sendMessage(
+      userId,
+      `🎉 У вас взаимная симпатия!\n\n${otherUser.name}, ${otherUser.age}, ${otherUser.city}\n\nМожно написать: https://vk.com/id${otherUser.id}`,
+      otherUser.photo,
+      keyboard()
+    );
+
+    await sendMessage(
+      otherUser.id,
+      `🎉 У вас взаимная симпатия!\n\nМожно написать: https://vk.com/id${userId}`,
+      null,
+      keyboard()
+    );
+  } else {
+    await sendMessage(userId, "❤️ Лайк отправлен!", null, keyboard());
+  }
+
+  await updateUser(userId, { viewing_user: null });
+  await showProfile(userId);
 }
 
 app.post("/", async (req, res) => {
@@ -73,49 +159,43 @@ app.post("/", async (req, res) => {
 
     if (!user) {
       await supabase.from("users").insert([{ id: userId, step: "name" }]);
+      await sendMessage(userId, "❤️ Добро пожаловать в Vector Love!\n\nНапиши свое имя 👇");
+      return res.send("ok");
+    }
 
-      await sendMessage(
-        userId,
-        "❤️ Добро пожаловать в Vector Love!\n\nДавай создадим твою анкету.\n\nНапиши свое имя 👇"
-      );
+    if (message === "👀 смотреть" || message === "смотреть") {
+      if (user.step !== "done") {
+        await sendMessage(userId, "Сначала закончи анкету. Напиши «старт».");
+        return res.send("ok");
+      }
 
+      await showProfile(userId);
+      return res.send("ok");
+    }
+
+    if (message === "❤️ лайк" || message === "лайк") {
+      await handleLike(userId);
+      return res.send("ok");
+    }
+
+    if (message === "👎 далее" || message === "далее") {
+      await updateUser(userId, { viewing_user: null });
+      await showProfile(userId);
       return res.send("ok");
     }
 
     if ((message === "старт" || message === "начать") && user.step === "done") {
-      await sendMessage(
-        userId,
-        "❤️ Твоя анкета уже создана.\n\nСкоро добавим просмотр анкет, лайки и мэтчи."
-      );
-
+      await sendMessage(userId, "❤️ Твоя анкета уже создана.\n\nНажми «👀 Смотреть».", null, keyboard());
       return res.send("ok");
     }
 
     if ((message === "старт" || message === "начать") && user.step !== "done") {
-      if (user.step === "name") {
-        await sendMessage(userId, "Напиши свое имя 👇");
-      } else if (user.step === "age") {
-        await sendMessage(userId, "Сколько тебе лет? 🔞");
-      } else if (user.step === "city") {
-        await sendMessage(userId, "Из какого ты города? 🏙");
-      } else if (user.step === "about") {
-        await sendMessage(userId, "Расскажи коротко о себе ✨");
-      } else if (user.step === "photo") {
-        await sendMessage(userId, "Отправь свое фото для анкеты 📸");
-      } else {
-        await updateUser(userId, { step: "name" });
-        await sendMessage(userId, "Напиши свое имя 👇");
-      }
-
+      await sendMessage(userId, "Продолжаем анкету 👇");
       return res.send("ok");
     }
 
     if (user.step === "name") {
-      await updateUser(userId, {
-        name: text,
-        step: "age"
-      });
-
+      await updateUser(userId, { name: text, step: "age" });
       await sendMessage(userId, "Сколько тебе лет? 🔞");
       return res.send("ok");
     }
@@ -128,31 +208,19 @@ app.post("/", async (req, res) => {
         return res.send("ok");
       }
 
-      await updateUser(userId, {
-        age,
-        step: "city"
-      });
-
+      await updateUser(userId, { age, step: "city" });
       await sendMessage(userId, "Из какого ты города? 🏙");
       return res.send("ok");
     }
 
     if (user.step === "city") {
-      await updateUser(userId, {
-        city: text,
-        step: "about"
-      });
-
+      await updateUser(userId, { city: text, step: "about" });
       await sendMessage(userId, "Расскажи коротко о себе ✨");
       return res.send("ok");
     }
 
     if (user.step === "about") {
-      await updateUser(userId, {
-        about: text,
-        step: "photo"
-      });
-
+      await updateUser(userId, { about: text, step: "photo" });
       await sendMessage(userId, "Отлично 🔥\n\nТеперь отправь свое фото для анкеты 📸");
       return res.send("ok");
     }
@@ -165,29 +233,21 @@ app.post("/", async (req, res) => {
         return res.send("ok");
       }
 
-      await updateUser(userId, {
-        photo,
-        step: "done"
-      });
+      await updateUser(userId, { photo, step: "done" });
 
       const finalUser = await getUser(userId);
 
       await sendMessage(
         userId,
-        `🔥 Анкета готова!\n\nИмя: ${finalUser.name}\nВозраст: ${finalUser.age}\nГород: ${finalUser.city}\nО себе: ${finalUser.about}\n\nСкоро добавим просмотр анкет и лайки ❤️`,
-        photo
+        `🔥 Анкета готова!\n\nИмя: ${finalUser.name}\nВозраст: ${finalUser.age}\nГород: ${finalUser.city}\nО себе: ${finalUser.about}\n\nТеперь нажми «👀 Смотреть» ❤️`,
+        photo,
+        keyboard()
       );
 
       return res.send("ok");
     }
 
-    if (user.step === "done") {
-      await sendMessage(userId, "❤️ Твоя анкета уже создана.");
-      return res.send("ok");
-    }
-
-    await updateUser(userId, { step: "name" });
-    await sendMessage(userId, "Напиши свое имя 👇");
+    await sendMessage(userId, "Нажми «👀 Смотреть» или напиши «смотреть».", null, keyboard());
   }
 
   return res.send("ok");
