@@ -423,6 +423,56 @@ async function handleReport(userId) {
   await showProfile(userId);
 }
 
+async function showMyProfile(userId) {
+
+  const user = await getUser(userId);
+
+  if (!user) {
+
+    await sendMessage(
+      userId,
+      "Анкета не найдена."
+    );
+
+    return;
+  }
+
+  const viewsLeft = user.is_vip
+    ? "∞"
+    : Math.max(
+        0,
+        FREE_DAILY_LIMIT - (user.daily_views || 0)
+      );
+
+  const text =
+    `👤 Моя анкета\n\n` +
+    `Имя: ${user.name || "Не указано"}\n` +
+    `Возраст: ${user.age || "Не указан"}\n` +
+    `Город: ${user.city || "Не указан"}\n` +
+    `Пол: ${user.gender || "Не указан"}\n` +
+    `Ищу: ${user.looking_for || "Не указано"}\n` +
+    `О себе: ${user.about || "Не указано"}\n\n` +
+    `👑 VIP: ${user.is_vip ? "Да" : "Нет"}\n` +
+    `📊 Осталось просмотров: ${viewsLeft}`;
+
+  if (user.photo) {
+
+    await sendMessage(
+      userId,
+      text,
+      keyboard(),
+      user.photo
+    );
+
+    return;
+  }
+
+  await sendMessage(
+    userId,
+    text,
+    keyboard()
+  );
+}
 async function showAdminPanel(userId) {
   if (!isAdmin(userId)) {
     await sendMessage(userId, "Нет доступа.");
