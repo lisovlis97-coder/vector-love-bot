@@ -551,6 +551,40 @@ async function showAdminPanel(userId) {
   );
 }
 
+async function showNewProfiles(userId) {
+  if (!isAdmin(userId)) {
+    await sendMessage(userId, "Нет доступа.");
+    return;
+  }
+
+  const { data: users, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("step", "done")
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  if (error) {
+    await sendMessage(userId, "Ошибка загрузки анкет.");
+    return;
+  }
+
+  if (!users || users.length === 0) {
+    await sendMessage(userId, "Анкет пока нет.");
+    return;
+  }
+
+  let text = "🆕 Последние анкеты:\n\n";
+
+  for (const user of users) {
+    text +=
+      `ID: ${user.id}\n` +
+      `${user.name || "Без имени"}, ${user.age || "?"}\n` +
+      `${user.city || "Не указан"}\n\n`;
+  }
+
+  await sendMessage(userId, text);
+}
 async function showReports(userId) {
   if (!isAdmin(userId)) {
     await sendMessage(userId, "Нет доступа.");
@@ -703,6 +737,10 @@ async function processMessage(vkMessage) {
 }
 
 if (message === "жалобы") {
+  if (message === "новые анкеты") {
+  await showNewProfiles(userId);
+  return;
+}
   await showReports(userId);
   return;
 }
