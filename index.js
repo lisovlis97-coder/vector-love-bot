@@ -544,6 +544,7 @@ async function showAdminPanel(userId) {
     `Команды:\n` +
     `статистика\n` +
     `жалобы\n` +
+    `новые анкеты\n` +
     `выдать vip ID\n` +
     `бан ID\n` +
     `разбан ID\n` +
