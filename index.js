@@ -742,6 +742,10 @@ if (message === "жалобы") {
   await showNewProfiles(userId);
   return;
 }
+  if (message === "новые анкеты") {
+  await showNewProfiles(userId);
+  return;
+}
   await showReports(userId);
   return;
 }
