@@ -738,15 +738,12 @@ async function processMessage(vkMessage) {
 }
 
 if (message === "жалобы") {
-  if (message === "новые анкеты") {
-  await showNewProfiles(userId);
-  return;
-}
-  if (message === "новые анкеты") {
-  await showNewProfiles(userId);
-  return;
-}
   await showReports(userId);
+  return;
+}
+
+if (message === "новые анкеты") {
+  await showNewProfiles(userId);
   return;
 }
 
