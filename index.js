@@ -912,15 +912,6 @@ if (message.startsWith("код ")) {
   );
 
   return;
-} {
-    await sendMessage(
-      userId,
-      "👑 VIP — 199₽\n\nПосле оплаты отправь VIP-код ❤️",
-      keyboard()
-    );
-
-    return;
-  }
 
   if (
   message === "скрыть" ||
