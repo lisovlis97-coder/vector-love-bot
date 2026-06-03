@@ -911,7 +911,8 @@ if (message.startsWith("код ")) {
     keyboard()
   );
 
-  return;
+    return;
+}
 
   if (
   message === "скрыть" ||
