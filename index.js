@@ -586,6 +586,41 @@ async function showNewProfiles(userId) {
 
   await sendMessage(userId, text);
 }
+async function searchUserById(adminId, targetId) {
+  if (!isAdmin(adminId)) {
+    await sendMessage(adminId, "Нет доступа.");
+    return;
+  }
+
+  const user = await getUser(targetId);
+
+  if (!user) {
+    await sendMessage(adminId, "Пользователь не найден.");
+    return;
+  }
+
+  const text =
+    `🔎 Анкета пользователя\n\n` +
+    `ID: ${user.id}\n` +
+    `Имя: ${user.name || "Не указано"}\n` +
+    `Возраст: ${user.age || "Не указан"}\n` +
+    `Город: ${user.city || "Не указан"}\n` +
+    `Пол: ${user.gender || "Не указан"}\n` +
+    `Ищет: ${user.looking_for || "Не указано"}\n` +
+    `О себе: ${user.about || "Не указано"}\n\n` +
+    `Шаг: ${user.step || "Не указан"}\n` +
+    `VIP: ${user.is_vip ? "Да" : "Нет"}\n` +
+    `Скрыта: ${user.is_hidden ? "Да" : "Нет"}\n` +
+    `Забанен: ${user.is_banned ? "Да" : "Нет"}\n` +
+    `Просмотров сегодня: ${user.daily_views || 0}`;
+
+  if (user.photo) {
+    await sendMessage(adminId, text, null, user.photo);
+    return;
+  }
+
+  await sendMessage(adminId, text);
+}
 async function showReports(userId) {
   if (!isAdmin(userId)) {
     await sendMessage(userId, "Нет доступа.");
