@@ -782,6 +782,17 @@ if (message === "новые анкеты") {
   return;
 }
 
+  if (message.startsWith("поиск ")) {
+  const targetId = Number(message.replace("поиск ", "").trim());
+
+  if (!targetId) {
+    await sendMessage(userId, "Напиши так: поиск 302920827");
+    return;
+  }
+
+  await searchUserById(userId, targetId);
+  return;
+}
 if (message.startsWith("выдать vip ")) {
   const targetId = Number(message.replace("выдать vip ", "").trim());
 
