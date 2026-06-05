@@ -622,6 +622,44 @@ async function searchUserById(adminId, targetId) {
 
   await sendMessage(adminId, text);
 }
+async function deleteUserById(adminId, targetId) {
+  if (!isAdmin(adminId)) {
+    await sendMessage(adminId, "Нет доступа.");
+    return;
+  }
+
+  const user = await getUser(targetId);
+
+  if (!user) {
+    await sendMessage(adminId, "Пользователь не найден.");
+    return;
+  }
+
+  await supabase
+    .from("likes")
+    .delete()
+    .or(`from_user.eq.${targetId},to_user.eq.${targetId}`);
+
+  await supabase
+    .from("reports")
+    .delete()
+    .or(`from_user.eq.${targetId},to_user.eq.${targetId}`);
+
+  const { error } = await supabase
+    .from("users")
+    .delete()
+    .eq("id", targetId);
+
+  if (error) {
+    await sendMessage(adminId, "Ошибка удаления анкеты.");
+    return;
+  }
+
+  await sendMessage(
+    adminId,
+    `🗑 Анкета удалена.\n\nID: ${targetId}\n${user.name || "Без имени"}, ${user.age || "?"}`
+  );
+}
 async function showReports(userId) {
   if (!isAdmin(userId)) {
     await sendMessage(userId, "Нет доступа.");
