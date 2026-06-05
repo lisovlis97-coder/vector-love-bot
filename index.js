@@ -828,6 +828,17 @@ if (message === "новые анкеты") {
     await sendMessage(userId, "Напиши так: поиск 302920827");
     return;
   }
+    if (message.startsWith("удалить ")) {
+  const targetId = Number(message.replace("удалить ", "").trim());
+
+  if (!targetId) {
+    await sendMessage(userId, "Напиши так: удалить 302920827");
+    return;
+  }
+
+  await deleteUserById(userId, targetId);
+  return;
+}
 
   await searchUserById(userId, targetId);
   return;
