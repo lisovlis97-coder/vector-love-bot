@@ -11,6 +11,16 @@ source = source.replace(
   /function getPhotoAttachment\\(vkMessage\\) \\{[\\s\\S]*?\\n\\}/,
   'function getPhotoAttachment(vkMessage) {\\n  const photoAttachment = (vkMessage.attachments || []).find(item => item.type === "photo");\\n  if (!photoAttachment) return null;\\n  const photo = photoAttachment.photo;\\n  return "photo" + photo.owner_id + "_" + photo.id + (photo.access_key ? "_" + photo.access_key : "");\\n}'
 );
+
+source = source.replaceAll(
+  "💘 У ВАС ВЗАИМНАЯ СИМПАТИЯ!",
+  "💘 Взаимная симпатия!"
+);
+
+source = source.replaceAll(
+  "Нажми «💌 Написать» — и начинай знакомство 😊",
+  "Вы понравились друг другу ❤️\\n\\nСамое время написать и познакомиться поближе 😉"
+);
 `;
 
 wrapperSource = wrapperSource.replace(marker, injection + "\n" + marker);
