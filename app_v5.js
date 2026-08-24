@@ -9,10 +9,18 @@ const marker = 'const patched = new Module(sourcePath, module.parent);';
 const injection = String.raw`
 source = source.replace(
   '[{ action: { type: "text", label: "📋 Чёрный список" }, color: "secondary" }]',
-  '[{ action: { type: "text", label: "📋 Чёрный список" }, color: "secondary" }, { action: { type: "text", label: "💘 Мои матчи" }, color: "positive" }]'
+  '[{ action: { type: "text", label: "📋 Чёрный список" }, color: "secondary" }, { action: { type: "text", label: "💘 Мои матчи" }, color: "positive" }, { action: { type: "text", label: "🆘 Поддержка" }, color: "secondary" }]'
 );
 
 const extraHelpers = [
+  'function supportKeyboard() {',
+  '  return JSON.stringify({ one_time: false, buttons: [[{ action: { type: "open_link", link: "https://vk.com/im?sel=302920827", label: "💳 Оплатить VIP" } }], [{ action: { type: "text", label: "👀 Смотреть" }, color: "primary" }]] });',
+  '}',
+  '',
+  'async function showSupport(userId) {',
+  '  await sendMessage(userId, "🆘 Поддержка Vector Love\\n\\nЕсли хочешь подключить VIP — нажми «💳 Оплатить VIP» и напиши: «Хочу VIP».\\n\\nТебе пришлют реквизиты для оплаты по СБП. После оплаты отправь чек — VIP активируем вручную.\\n\\nПо другим вопросам тоже можешь писать туда же.", supportKeyboard());',
+  '}',
+  '',
   'async function showVipInfo(userId) {',
   '  const user = await normalizeVip(await getUser(userId));',
   '  if (!user) return;',
@@ -21,7 +29,7 @@ const extraHelpers = [
   '    await sendMessage(userId, "👑 VIP активен" + until + ".\\n\\n• безлимитный просмотр\\n• видно, кто тебя лайкнул\\n• анкета показывается чаще\\n• 🔥 буст раз в сутки", mainKeyboard());',
   '    return;',
   '  }',
-  '  await sendMessage(userId, "👑 Vector Love VIP\\n\\n• безлимитный просмотр\\n• видно, кто тебя лайкнул\\n• анкета показывается чаще\\n• 🔥 буст раз в сутки\\n\\nСейчас подключение VIP через оплату временно недоступно. Если у тебя есть VIP-код — просто отправь его сообщением.", mainKeyboard());',
+  '  await sendMessage(userId, "👑 VIP — 199 ₽ / месяц\\n\\n• безлимитный просмотр\\n• «Кто лайкнул» карточками\\n• приоритет в выдаче\\n• 🔥 буст раз в сутки\\n\\nОплата пока вручную по СБП через поддержку. После оплаты отправь чек — VIP активируем вручную.", supportKeyboard());',
   '}',
   '',
   'async function showMatches(userId) {',
@@ -52,7 +60,7 @@ source = source.replace(
 
 source = source.replace(
   '  if (message === "чёрный список" || message === "📋 чёрный список") { await showBlockList(userId); return; }',
-  '  if (message === "чёрный список" || message === "📋 чёрный список") { await showBlockList(userId); return; }\n  if (message === "мои матчи" || message === "💘 мои матчи" || message === "матчи") { await showMatches(userId); return; }'
+  '  if (message === "чёрный список" || message === "📋 чёрный список") { await showBlockList(userId); return; }\n  if (message === "мои матчи" || message === "💘 мои матчи" || message === "матчи") { await showMatches(userId); return; }\n  if (message === "поддержка" || message === "🆘 поддержка") { await showSupport(userId); return; }'
 );
 
 source = source.replace(
@@ -72,12 +80,12 @@ source = source.replace(
 
 source = source.replace(
   '    await sendMessage(userId, \`👑 Лимит просмотров закончился.\\n\\nБесплатно доступно \${FREE_DAILY_LIMIT} анкет в сутки.\`, mainKeyboard());',
-  '    await sendMessage(userId, \`👀 Лимит просмотров на сегодня закончился.\\n\\nБесплатно доступно \${FREE_DAILY_LIMIT} анкет в сутки. Возвращайся завтра ❤️\\n\\nЕсли у тебя есть VIP-код — можешь отправить его сообщением.\`, mainKeyboard());'
+  '    await sendMessage(userId, \`👀 Лимит просмотров на сегодня закончился.\\n\\nБесплатно доступно \${FREE_DAILY_LIMIT} анкет в сутки. Возвращайся завтра ❤️\\n\\nХочешь безлимит — открой «👑 VIP».\`, mainKeyboard());'
 );
 
 source = source.replace(
   '  if (!isVipActive(user)) { await sendMessage(userId, "👑 Это VIP-функция. С VIP ты увидишь тех, кто поставил тебе лайк ❤️", mainKeyboard()); return; }',
-  '  if (!isVipActive(user)) { await sendMessage(userId, "👑 «Кто лайкнул» доступно при активном VIP.\\n\\nЕсли у тебя есть VIP-код — отправь его сообщением.", mainKeyboard()); return; }'
+  '  if (!isVipActive(user)) { await sendMessage(userId, "👑 Это VIP-функция. С VIP ты увидишь тех, кто поставил тебе лайк ❤️\\n\\nОткрой «👑 VIP», чтобы подключить его через поддержку по СБП.", mainKeyboard()); return; }'
 );
 `;
 
