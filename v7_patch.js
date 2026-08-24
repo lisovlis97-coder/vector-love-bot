@@ -4,7 +4,7 @@ module.exports = function applyV7(source) {
     '[{ action: { type: "text", label: "📋 Чёрный список" }, color: "secondary" }, { action: { type: "text", label: "💘 Мои матчи" }, color: "positive" }, { action: { type: "text", label: "🎁 Пригласить" }, color: "positive" }, { action: { type: "text", label: "🆘 Поддержка" }, color: "secondary" }]'
   );
 
-  const helpers = `
+  const helpers = String.raw`
 function referralCodeFor(userId) { return "VL" + userId; }
 function hasForbiddenProfileContent(value) {
   const s = String(value || "").toLowerCase();
