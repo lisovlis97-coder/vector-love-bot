@@ -71,13 +71,13 @@ source = source.replace(
 );
 
 source = source.replace(
-  '    await sendMessage(userId, \`👑 Лимит просмотров закончился.\n\nБесплатно доступно \${FREE_DAILY_LIMIT} анкет в сутки.\`, mainKeyboard());',
-  '    await sendMessage(userId, \`👀 Лимит просмотров на сегодня закончился.\n\nБесплатно доступно \${FREE_DAILY_LIMIT} анкет в сутки. Возвращайся завтра ❤️\n\nЕсли у тебя есть VIP-код — можешь отправить его сообщением.\`, mainKeyboard());'
+  '    await sendMessage(userId, \`👑 Лимит просмотров закончился.\\n\\nБесплатно доступно \${FREE_DAILY_LIMIT} анкет в сутки.\`, mainKeyboard());',
+  '    await sendMessage(userId, \`👀 Лимит просмотров на сегодня закончился.\\n\\nБесплатно доступно \${FREE_DAILY_LIMIT} анкет в сутки. Возвращайся завтра ❤️\\n\\nЕсли у тебя есть VIP-код — можешь отправить его сообщением.\`, mainKeyboard());'
 );
 
 source = source.replace(
   '  if (!isVipActive(user)) { await sendMessage(userId, "👑 Это VIP-функция. С VIP ты увидишь тех, кто поставил тебе лайк ❤️", mainKeyboard()); return; }',
-  '  if (!isVipActive(user)) { await sendMessage(userId, "👑 «Кто лайкнул» доступно при активном VIP.\n\nЕсли у тебя есть VIP-код — отправь его сообщением.", mainKeyboard()); return; }'
+  '  if (!isVipActive(user)) { await sendMessage(userId, "👑 «Кто лайкнул» доступно при активном VIP.\\n\\nЕсли у тебя есть VIP-код — отправь его сообщением.", mainKeyboard()); return; }'
 );
 `;
 
