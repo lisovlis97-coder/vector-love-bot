@@ -69,6 +69,11 @@ source = source.replace(
 );
 
 source = source.replace(
+  '  if (message.startsWith("выдать vip ")) { const id=Number(message.replace("выдать vip ","").trim()); if(id) await giveVip(userId,id); return; }',
+  '  if (message.startsWith("выдать vip ")) { const id=Number(message.replace("выдать vip ","").trim()); if(id) await giveVip(userId,id); return; }\n  if (message.startsWith("vip ") && isAdmin(userId)) { const id=Number(message.replace("vip ","").trim()); if(id) await giveVip(userId,id); else await sendMessage(userId,"Формат: vip ID"); return; }'
+);
+
+source = source.replace(
   '    await sendMessage(targetId, isVipActive(await normalizeVip(await getUser(targetId))) ? "❤️ Тебя лайкнули! Можешь сразу открыть «👑 Кто лайкнул» 👀" : "❤️ Кому-то понравилась твоя анкета 👀 С VIP можно сразу увидеть, кто это.", mainKeyboard());',
   '    const likedTarget = await normalizeVip(await getUser(targetId));\n    await sendMessage(targetId, isVipActive(likedTarget) ? "❤️ Тебя лайкнули! Открой «👑 Кто лайкнул» и посмотри, кто это 👀" : "❤️ Кому-то понравилась твоя анкета 👀", mainKeyboard());'
 );
