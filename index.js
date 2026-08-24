@@ -24,23 +24,85 @@ function keyboard() {
   return JSON.stringify({
     one_time: false,
     buttons: [
-      [{ action: { type: "text", label: "👀 Смотреть" }, color: "primary" }],
       [
-        { action: { type: "text", label: "❤️ Лайк" }, color: "positive" },
-        { action: { type: "text", label: "👎 Далее" }, color: "negative" }
+        {
+          action: {
+            type: "text",
+            label: "👀 Смотреть"
+          },
+          color: "primary"
+        }
       ],
       [
-        { action: { type: "text", label: "🚫 Жалоба" }, color: "negative" },
-        { action: { type: "text", label: "👤 Моя анкета" }, color: "secondary" },
-        { action: { type: "text", label: "📊 Лимит" }, color: "secondary" }
+        {
+          action: {
+            type: "text",
+            label: "❤️ Лайк"
+          },
+          color: "positive"
+        },
+        {
+          action: {
+            type: "text",
+            label: "👎 Далее"
+          },
+          color: "negative"
+        }
       ],
       [
-        { action: { type: "text", label: "👑 VIP" }, color: "secondary" },
-        { action: { type: "text", label: "👑 Кто лайкнул" }, color: "secondary" }
+        {
+          action: {
+            type: "text",
+            label: "🚫 Жалоба"
+          },
+          color: "negative"
+        },
+        {
+          action: {
+            type: "text",
+            label: "👤 Моя анкета"
+          },
+          color: "secondary"
+        },
+        {
+          action: {
+            type: "text",
+            label: "📊 Лимит"
+          },
+          color: "secondary"
+        }
       ],
       [
-        { action: { type: "text", label: "🙈 Скрыть" }, color: "secondary" },
-        { action: { type: "text", label: "🔄 Заново" }, color: "secondary" }
+        {
+          action: {
+            type: "text",
+            label: "👑 VIP"
+          },
+          color: "secondary"
+        },
+        {
+          action: {
+            type: "text",
+            label: "👑 Кто лайкнул"
+          },
+          color: "secondary"
+        }
+      ],
+      [
+        {
+          action: {
+            type: "text",
+            label: "🙈 Скрыть"
+          },
+          color: "secondary"
+        },
+        {
+          action: {
+            type: "text",
+            label: "🔄 Заново"
+          },
+          color: "secondary"
+        }
       ]
     ]
   });
@@ -49,24 +111,57 @@ function keyboard() {
 function genderKeyboard() {
   return JSON.stringify({
     one_time: true,
-    buttons: [[
-      { action: { type: "text", label: "Парень" }, color: "primary" },
-      { action: { type: "text", label: "Девушка" }, color: "primary" }
-    ]]
+    buttons: [
+      [
+        {
+          action: {
+            type: "text",
+            label: "Парень"
+          },
+          color: "primary"
+        },
+        {
+          action: {
+            type: "text",
+            label: "Девушка"
+          },
+          color: "primary"
+        }
+      ]
+    ]
   });
 }
 
 function lookingKeyboard() {
   return JSON.stringify({
     one_time: true,
-    buttons: [[
-      { action: { type: "text", label: "Ищу парня" }, color: "primary" },
-      { action: { type: "text", label: "Ищу девушку" }, color: "primary" }
-    ]]
+    buttons: [
+      [
+        {
+          action: {
+            type: "text",
+            label: "Ищу парня"
+          },
+          color: "primary"
+        },
+        {
+          action: {
+            type: "text",
+            label: "Ищу девушку"
+          },
+          color: "primary"
+        }
+      ]
+    ]
   });
 }
 
-async function sendMessage(userId, message, kb = null, attachment = null) {
+async function sendMessage(
+  userId,
+  message,
+  kb = null,
+  attachment = null
+) {
   try {
     const params = {
       user_id: userId,
@@ -76,20 +171,33 @@ async function sendMessage(userId, message, kb = null, attachment = null) {
       v: "5.199"
     };
 
-    if (kb) params.keyboard = kb;
-    if (attachment) params.attachment = attachment;
+    if (kb) {
+      params.keyboard = kb;
+    }
+
+    if (attachment) {
+      params.attachment = attachment;
+    }
 
     const response = await axios.post(
       "https://api.vk.com/method/messages.send",
       null,
-      { params }
+      {
+        params
+      }
     );
 
     if (response.data.error) {
-      console.log("VK SEND ERROR:", response.data.error);
+      console.log(
+        "VK SEND ERROR:",
+        response.data.error
+      );
     }
   } catch (e) {
-    console.log("SEND ERROR:", e.response?.data || e.message);
+    console.log(
+      "SEND ERROR:",
+      e.response?.data || e.message
+    );
   }
 }
 
@@ -100,43 +208,69 @@ async function getUser(userId) {
     .eq("id", userId)
     .maybeSingle();
 
-  if (error) console.log("GET USER ERROR:", error);
+  if (error) {
+    console.log(
+      "GET USER ERROR:",
+      error
+    );
+  }
 
   return data;
 }
 
-async function updateUser(userId, fields) {
+async function updateUser(
+  userId,
+  fields
+) {
   const { error } = await supabase
     .from("users")
     .update(fields)
     .eq("id", userId);
 
-  if (error) console.log("UPDATE USER ERROR:", error);
+  if (error) {
+    console.log(
+      "UPDATE USER ERROR:",
+      error
+    );
+  }
 }
 
 function getPhotoAttachment(vkMessage) {
-  const attachments = vkMessage.attachments || [];
-  const photoAttachment = attachments.find(item => item.type === "photo");
+  const attachments =
+    vkMessage.attachments || [];
 
-  if (!photoAttachment) return null;
+  const photoAttachment =
+    attachments.find(
+      item => item.type === "photo"
+    );
 
-  const photo = photoAttachment.photo;
+  if (!photoAttachment) {
+    return null;
+  }
+
+  const photo =
+    photoAttachment.photo;
 
   return `photo${photo.owner_id}_${photo.id}`;
 }
 
 function todayDate() {
-  return new Date().toISOString().split("T")[0];
+  return new Date()
+    .toISOString()
+    .split("T")[0];
 }
 
 async function resetViewsIfNeeded(user) {
   const today = todayDate();
 
   if (user.last_view_date !== today) {
-    await updateUser(user.id, {
-      daily_views: 0,
-      last_view_date: today
-    });
+    await updateUser(
+      user.id,
+      {
+        daily_views: 0,
+        last_view_date: today
+      }
+    );
 
     user.daily_views = 0;
     user.last_view_date = today;
@@ -146,23 +280,46 @@ async function resetViewsIfNeeded(user) {
 }
 
 async function canViewProfiles(user) {
-  if (user.is_vip) return true;
+  if (user.is_vip) {
+    return true;
+  }
 
-  user = await resetViewsIfNeeded(user);
+  user =
+    await resetViewsIfNeeded(user);
 
-  return user.daily_views < FREE_DAILY_LIMIT;
+  return (
+    user.daily_views <
+    FREE_DAILY_LIMIT
+  );
 }
 
 async function increaseViews(user) {
-  if (user.is_vip) return;
+  if (user.is_vip) {
+    return;
+  }
 
-  await updateUser(user.id, {
-    daily_views: (user.daily_views || 0) + 1,
-    last_view_date: todayDate()
-  });
+  await updateUser(
+    user.id,
+    {
+      daily_views:
+        (user.daily_views || 0) + 1,
+
+      last_view_date:
+        todayDate()
+    }
+  );
 }
-
 async function activateVipCode(userId, code) {
+  const user = await getUser(userId);
+
+  if (!user) {
+    await sendMessage(
+      userId,
+      "Сначала создай анкету через «Старт», а потом активируй VIP-код."
+    );
+    return;
+  }
+
   const upperCode = code.toUpperCase();
 
   const { data: vipCode, error } = await supabase
@@ -172,65 +329,134 @@ async function activateVipCode(userId, code) {
     .maybeSingle();
 
   if (error) {
-    console.log("VIP CODE ERROR:", error);
-    await sendMessage(userId, "Ошибка проверки VIP-кода 😔", keyboard());
-    return;
-  }
+    console.log(
+      "VIP CODE ERROR:",
+      error
+    );
 
-  if (!vipCode) {
-    await sendMessage(userId, "❌ VIP-код не найден.", keyboard());
-    return;
-  }
-
-  if (vipCode.is_used) {
-    await sendMessage(userId, "❌ Этот VIP-код уже использован.", keyboard());
-    return;
-  }
-
-  await supabase
-    .from("vip_codes")
-    .update({
-      is_used: true,
-      used_by: userId,
-      used_at: new Date()
-    })
-    .eq("id", vipCode.id);
-
-  await updateUser(userId, {
-    is_vip: true
-  });
-
-  await sendMessage(
-    userId,
-    "👑 VIP успешно активирован!\n\nТеперь у тебя:\n• Безлимитный просмотр\n• Кто лайкнул тебя ❤️",
-    keyboard()
-  );
-}
-
-async function showProfile(userId) {
-  let currentUser = await getUser(userId);
-
-  if (!currentUser) return;
-
-  const allowed = await canViewProfiles(currentUser);
-
-  if (!allowed) {
     await sendMessage(
       userId,
-      `👑 Лимит просмотров закончился.\n\nБесплатно доступно ${FREE_DAILY_LIMIT} анкет в сутки.\n\nАктивируй VIP для безлимитного просмотра ❤️`,
+      "Ошибка проверки VIP-кода 😔",
       keyboard()
     );
 
     return;
   }
 
-  const { data: liked } = await supabase
-    .from("likes")
-    .select("to_user")
-    .eq("from_user", userId);
+  if (!vipCode) {
+    await sendMessage(
+      userId,
+      "❌ VIP-код не найден.",
+      keyboard()
+    );
 
-  const likedIds = liked ? liked.map(x => x.to_user) : [];
-  likedIds.push(userId);
+    return;
+  }
+
+  if (vipCode.is_used) {
+    await sendMessage(
+      userId,
+      "❌ Этот VIP-код уже использован.",
+      keyboard()
+    );
+
+    return;
+  }
+
+  const { error: markError } =
+    await supabase
+      .from("vip_codes")
+      .update({
+        is_used: true,
+        used_by: userId,
+        used_at:
+          new Date().toISOString()
+      })
+      .eq("id", vipCode.id);
+
+  if (markError) {
+    console.log(
+      "VIP CODE UPDATE ERROR:",
+      markError
+    );
+
+    await sendMessage(
+      userId,
+      "Не удалось активировать VIP-код 😔",
+      keyboard()
+    );
+
+    return;
+  }
+
+  await updateUser(
+    userId,
+    {
+      is_vip: true
+    }
+  );
+
+  await sendMessage(
+    userId,
+    "👑 VIP успешно активирован!\n\n" +
+    "Теперь у тебя:\n" +
+    "• безлимитный просмотр\n" +
+    "• доступ к «Кто лайкнул» ❤️",
+    keyboard()
+  );
+}
+
+async function showProfile(userId) {
+  let currentUser =
+    await getUser(userId);
+
+  if (!currentUser) {
+    return;
+  }
+
+  const allowed =
+    await canViewProfiles(
+      currentUser
+    );
+
+  if (!allowed) {
+    await sendMessage(
+      userId,
+      `👑 Лимит просмотров закончился.\n\n` +
+      `Бесплатно доступно ${FREE_DAILY_LIMIT} анкет в сутки.\n\n` +
+      `Активируй VIP для безлимитного просмотра ❤️`,
+      keyboard()
+    );
+
+    return;
+  }
+
+  const { data: liked } =
+    await supabase
+      .from("likes")
+      .select("to_user")
+      .eq("from_user", userId);
+
+  const { data: reported } =
+    await supabase
+      .from("reports")
+      .select("to_user")
+      .eq("from_user", userId);
+
+  const excludedIds =
+    new Set([userId]);
+
+  for (const item of liked || []) {
+    excludedIds.add(
+      item.to_user
+    );
+  }
+
+  for (const item of reported || []) {
+    excludedIds.add(
+      item.to_user
+    );
+  }
 
   let query = supabase
     .from("users")
@@ -238,25 +464,58 @@ async function showProfile(userId) {
     .eq("step", "done")
     .eq("is_banned", false)
     .eq("is_hidden", false)
-    .limit(1);
+    .limit(10);
 
-  if (currentUser.gender && currentUser.looking_for) {
+  if (
+    currentUser.gender &&
+    currentUser.looking_for
+  ) {
     query = query
-      .eq("gender", currentUser.looking_for)
-      .eq("looking_for", currentUser.gender);
+      .eq(
+        "gender",
+        currentUser.looking_for
+      )
+      .eq(
+        "looking_for",
+        currentUser.gender
+      );
   }
 
-  query = query.not("id", "in", `(${likedIds.join(",")})`);
+  const ids =
+    Array.from(excludedIds);
 
-  const { data: profiles, error } = await query;
+  if (ids.length > 0) {
+    query = query.not(
+      "id",
+      "in",
+      `(${ids.join(",")})`
+    );
+  }
+
+  const {
+    data: profiles,
+    error
+  } = await query;
 
   if (error) {
-    console.log("PROFILE ERROR:", error);
-    await sendMessage(userId, "Ошибка загрузки анкет 😔", keyboard());
+    console.log(
+      "PROFILE ERROR:",
+      error
+    );
+
+    await sendMessage(
+      userId,
+      "Ошибка загрузки анкет 😔",
+      keyboard()
+    );
+
     return;
   }
 
-  if (!profiles || profiles.length === 0) {
+  if (
+    !profiles ||
+    profiles.length === 0
+  ) {
     await sendMessage(
       userId,
       "Пока нет подходящих анкет 😔",
@@ -266,14 +525,28 @@ async function showProfile(userId) {
     return;
   }
 
-  await increaseViews(currentUser);
-  currentUser = await getUser(userId);
+  const profile =
+    profiles[
+      Math.floor(
+        Math.random() *
+        profiles.length
+      )
+    ];
 
-  const profile = profiles[0];
+  await increaseViews(
+    currentUser
+  );
 
-  await updateUser(userId, {
-    viewing_user: profile.id
-  });
+  currentUser =
+    await getUser(userId);
+
+  await updateUser(
+    userId,
+    {
+      viewing_user:
+        profile.id
+    }
+  );
 
   const text =
     `✨ Анкета\n\n` +
@@ -284,21 +557,42 @@ async function showProfile(userId) {
     `📊 Осталось просмотров: ${
       currentUser.is_vip
         ? "∞"
-        : Math.max(0, FREE_DAILY_LIMIT - (currentUser.daily_views || 0))
+        : Math.max(
+            0,
+            FREE_DAILY_LIMIT -
+              (
+                currentUser.daily_views ||
+                0
+              )
+          )
     }`;
 
   if (profile.photo) {
-    await sendMessage(userId, text, keyboard(), profile.photo);
+    await sendMessage(
+      userId,
+      text,
+      keyboard(),
+      profile.photo
+    );
+
     return;
   }
 
-  await sendMessage(userId, text, keyboard());
+  await sendMessage(
+    userId,
+    text,
+    keyboard()
+  );
 }
 
 async function handleLike(userId) {
-  const user = await getUser(userId);
+  const user =
+    await getUser(userId);
 
-  if (!user || !user.viewing_user) {
+  if (
+    !user ||
+    !user.viewing_user
+  ) {
     await sendMessage(
       userId,
       "Сначала нажми «👀 Смотреть».",
@@ -308,68 +602,102 @@ async function handleLike(userId) {
     return;
   }
 
-  const targetId = user.viewing_user;
+  const targetId =
+    user.viewing_user;
 
-  const { error } = await supabase
-    .from("likes")
-    .insert([
-      {
-        from_user: userId,
-        to_user: targetId
-      }
-    ]);
+  const { error } =
+    await supabase
+      .from("likes")
+      .insert([
+        {
+          from_user: userId,
+          to_user: targetId
+        }
+      ]);
 
   if (error) {
-    console.log("LIKE ERROR:", error);
+    console.log(
+      "LIKE ERROR:",
+      error
+    );
   }
 
-  const { data: match } = await supabase
-    .from("likes")
-    .select("*")
-    .eq("from_user", targetId)
-    .eq("to_user", userId)
-    .maybeSingle();
+  const { data: match } =
+    await supabase
+      .from("likes")
+      .select("*")
+      .eq(
+        "from_user",
+        targetId
+      )
+      .eq(
+        "to_user",
+        userId
+      )
+      .maybeSingle();
 
   if (match) {
-    const otherUser = await getUser(targetId);
+    const otherUser =
+      await getUser(
+        targetId
+      );
+
+    const currentUser =
+      await getUser(
+        userId
+      );
 
     await sendMessage(
       userId,
-      `🎉 У вас взаимная симпатия!\n\n${otherUser.name}, ${otherUser.age}\nhttps://vk.com/id${otherUser.id}`,
+      `❤️ Взаимная симпатия!\n\n` +
+      `${otherUser?.name || "Пользователь"}, ${otherUser?.age || "?"}\n` +
+      `https://vk.com/id${targetId}\n\n` +
+      `Не тяни с первым сообщением 😏`,
       keyboard()
     );
 
     await sendMessage(
-      otherUser.id,
-      `🎉 У вас взаимная симпатия!\n\nhttps://vk.com/id${userId}`,
+      targetId,
+      `❤️ Взаимная симпатия!\n\n` +
+      `${currentUser?.name || "Пользователь"}, ${currentUser?.age || "?"}\n` +
+      `https://vk.com/id${userId}\n\n` +
+      `Кажется, пора познакомиться поближе 😊`,
       keyboard()
     );
   } else {
+    await sendMessage(
+      userId,
+      "❤️ Лайк отправлен!",
+      keyboard()
+    );
 
-  await sendMessage(
+    await sendMessage(
+      targetId,
+      "❤️ Тебя кто-то лайкнул!\n\n" +
+      "Нажми «👑 Кто лайкнул», чтобы посмотреть.",
+      keyboard()
+    );
+  }
+
+  await updateUser(
     userId,
-    "❤️ Лайк отправлен!",
-    keyboard()
+    {
+      viewing_user: null
+    }
   );
 
-  await sendMessage(
-    targetId,
-    "❤️ Тебя кто-то лайкнул!\n\nНажми «👑 Кто лайкнул», чтобы посмотреть.",
-    keyboard()
+  await showProfile(
+    userId
   );
 }
-
-  await updateUser(userId, {
-    viewing_user: null
-  });
-
-  await showProfile(userId);
-}
-
 async function handleReport(userId) {
-  const user = await getUser(userId);
+  const user =
+    await getUser(userId);
 
-  if (!user || !user.viewing_user) {
+  if (
+    !user ||
+    !user.viewing_user
+  ) {
     await sendMessage(
       userId,
       "Сначала открой анкету через «👀 Смотреть».",
@@ -379,17 +707,19 @@ async function handleReport(userId) {
     return;
   }
 
-  const targetId = user.viewing_user;
+  const targetId =
+    user.viewing_user;
 
-  const { error } = await supabase
-    .from("reports")
-    .insert([
-      {
-        from_user: userId,
-        to_user: targetId,
-        reason: "Жалоба из бота"
-      }
-    ]);
+  const { error } =
+    await supabase
+      .from("reports")
+      .insert([
+        {
+          from_user: userId,
+          to_user: targetId,
+          reason: "Жалоба из бота"
+        }
+      ]);
 
   if (error) {
     await sendMessage(
@@ -401,49 +731,75 @@ async function handleReport(userId) {
     return;
   }
 
-  const { data: reports } = await supabase
-    .from("reports")
-    .select("*")
-    .eq("to_user", targetId);
+  const { data: reports } =
+    await supabase
+      .from("reports")
+      .select("*")
+      .eq(
+        "to_user",
+        targetId
+      );
 
-  if (reports && reports.length >= 3) {
-    await updateUser(targetId, {
-      is_banned: true
-    });
+  if (
+    reports &&
+    reports.length >= 3
+  ) {
+    await updateUser(
+      targetId,
+      {
+        is_banned: true
+      }
+    );
   }
 
-  await updateUser(userId, {
-    viewing_user: null
-  });
+  await updateUser(
+    userId,
+    {
+      viewing_user: null
+    }
+  );
 
   await sendMessage(
     userId,
-    "🚫 Жалоба отправлена. Мы скрыли эту анкету из твоего просмотра.",
+    "🚫 Жалоба отправлена.\n\n" +
+    "Эта анкета больше не будет попадаться тебе.",
     keyboard()
   );
 
-  await showProfile(userId);
+  await showProfile(
+    userId
+  );
 }
 
 async function toggleHidden(userId) {
-
-  const user = await getUser(userId);
+  const user =
+    await getUser(userId);
 
   if (!user) {
-    await sendMessage(userId, "Анкета не найдена.");
+    await sendMessage(
+      userId,
+      "Анкета не найдена."
+    );
+
     return;
   }
 
-  const newStatus = !user.is_hidden;
+  const newStatus =
+    !user.is_hidden;
 
-  await updateUser(userId, {
-    is_hidden: newStatus
-  });
+  await updateUser(
+    userId,
+    {
+      is_hidden:
+        newStatus
+    }
+  );
 
   if (newStatus) {
     await sendMessage(
       userId,
-      "🙈 Анкета скрыта.\n\nТеперь она не будет показываться другим пользователям.",
+      "🙈 Анкета скрыта.\n\n" +
+      "Теперь она не будет показываться другим пользователям.",
       keyboard()
     );
   } else {
@@ -454,12 +810,12 @@ async function toggleHidden(userId) {
     );
   }
 }
-async function showMyProfile(userId) {
 
-  const user = await getUser(userId);
+async function showMyProfile(userId) {
+  const user =
+    await getUser(userId);
 
   if (!user) {
-
     await sendMessage(
       userId,
       "Анкета не найдена."
@@ -468,12 +824,17 @@ async function showMyProfile(userId) {
     return;
   }
 
-  const viewsLeft = user.is_vip
-    ? "∞"
-    : Math.max(
-        0,
-        FREE_DAILY_LIMIT - (user.daily_views || 0)
-      );
+  const viewsLeft =
+    user.is_vip
+      ? "∞"
+      : Math.max(
+          0,
+          FREE_DAILY_LIMIT -
+            (
+              user.daily_views ||
+              0
+            )
+        );
 
   const text =
     `👤 Моя анкета\n\n` +
@@ -484,10 +845,10 @@ async function showMyProfile(userId) {
     `Ищу: ${user.looking_for || "Не указано"}\n` +
     `О себе: ${user.about || "Не указано"}\n\n` +
     `👑 VIP: ${user.is_vip ? "Да" : "Нет"}\n` +
+    `🙈 Скрыта: ${user.is_hidden ? "Да" : "Нет"}\n` +
     `📊 Осталось просмотров: ${viewsLeft}`;
 
   if (user.photo) {
-
     await sendMessage(
       userId,
       text,
@@ -504,34 +865,88 @@ async function showMyProfile(userId) {
     keyboard()
   );
 }
+
 async function showAdminPanel(userId) {
   if (!isAdmin(userId)) {
-    await sendMessage(userId, "Нет доступа.");
+    await sendMessage(
+      userId,
+      "Нет доступа."
+    );
+
     return;
   }
 
-  const { count: totalUsers } = await supabase
+  const {
+    count: totalUsers
+  } = await supabase
     .from("users")
-    .select("*", { count: "exact", head: true });
+    .select(
+      "*",
+      {
+        count: "exact",
+        head: true
+      }
+    );
 
-  const { count: readyProfiles } = await supabase
+  const {
+    count: readyProfiles
+  } = await supabase
     .from("users")
-    .select("*", { count: "exact", head: true })
-    .eq("step", "done");
+    .select(
+      "*",
+      {
+        count: "exact",
+        head: true
+      }
+    )
+    .eq(
+      "step",
+      "done"
+    );
 
-  const { count: vipUsers } = await supabase
+  const {
+    count: vipUsers
+  } = await supabase
     .from("users")
-    .select("*", { count: "exact", head: true })
-    .eq("is_vip", true);
+    .select(
+      "*",
+      {
+        count: "exact",
+        head: true
+      }
+    )
+    .eq(
+      "is_vip",
+      true
+    );
 
-  const { count: bannedUsers } = await supabase
+  const {
+    count: bannedUsers
+  } = await supabase
     .from("users")
-    .select("*", { count: "exact", head: true })
-    .eq("is_banned", true);
+    .select(
+      "*",
+      {
+        count: "exact",
+        head: true
+      }
+    )
+    .eq(
+      "is_banned",
+      true
+    );
 
-  const { count: reportsCount } = await supabase
+  const {
+    count: reportsCount
+  } = await supabase
     .from("reports")
-    .select("*", { count: "exact", head: true });
+    .select(
+      "*",
+      {
+        count: "exact",
+        head: true
+      }
+    );
 
   await sendMessage(
     userId,
@@ -556,28 +971,55 @@ async function showAdminPanel(userId) {
 
 async function showNewProfiles(userId) {
   if (!isAdmin(userId)) {
-    await sendMessage(userId, "Нет доступа.");
+    await sendMessage(
+      userId,
+      "Нет доступа."
+    );
+
     return;
   }
 
-  const { data: users, error } = await supabase
+  const {
+    data: users,
+    error
+  } = await supabase
     .from("users")
     .select("*")
-    .eq("step", "done")
-    .order("created_at", { ascending: false })
+    .eq(
+      "step",
+      "done"
+    )
+    .order(
+      "created_at",
+      {
+        ascending: false
+      }
+    )
     .limit(10);
 
   if (error) {
-    await sendMessage(userId, "Ошибка загрузки анкет.");
+    await sendMessage(
+      userId,
+      "Ошибка загрузки анкет."
+    );
+
     return;
   }
 
-  if (!users || users.length === 0) {
-    await sendMessage(userId, "Анкет пока нет.");
+  if (
+    !users ||
+    users.length === 0
+  ) {
+    await sendMessage(
+      userId,
+      "Анкет пока нет."
+    );
+
     return;
   }
 
-  let text = "🆕 Последние анкеты:\n\n";
+  let text =
+    "🆕 Последние анкеты:\n\n";
 
   for (const user of users) {
     text +=
@@ -586,18 +1028,30 @@ async function showNewProfiles(userId) {
       `${user.city || "Не указан"}\n\n`;
   }
 
-  await sendMessage(userId, text);
+  await sendMessage(
+    userId,
+    text
+  );
 }
 async function searchUserById(adminId, targetId) {
   if (!isAdmin(adminId)) {
-    await sendMessage(adminId, "Нет доступа.");
+    await sendMessage(
+      adminId,
+      "Нет доступа."
+    );
+
     return;
   }
 
-  const user = await getUser(targetId);
+  const user =
+    await getUser(targetId);
 
   if (!user) {
-    await sendMessage(adminId, "Пользователь не найден.");
+    await sendMessage(
+      adminId,
+      "Пользователь не найден."
+    );
+
     return;
   }
 
@@ -617,73 +1071,139 @@ async function searchUserById(adminId, targetId) {
     `Просмотров сегодня: ${user.daily_views || 0}`;
 
   if (user.photo) {
-    await sendMessage(adminId, text, null, user.photo);
+    await sendMessage(
+      adminId,
+      text,
+      null,
+      user.photo
+    );
+
     return;
   }
 
-  await sendMessage(adminId, text);
+  await sendMessage(
+    adminId,
+    text
+  );
 }
-async function deleteUserById(adminId, targetId) {
+
+async function deleteUserById(
+  adminId,
+  targetId
+) {
   if (!isAdmin(adminId)) {
-    await sendMessage(adminId, "Нет доступа.");
+    await sendMessage(
+      adminId,
+      "Нет доступа."
+    );
+
     return;
   }
 
-  const user = await getUser(targetId);
+  const user =
+    await getUser(targetId);
 
   if (!user) {
-    await sendMessage(adminId, "Пользователь не найден.");
+    await sendMessage(
+      adminId,
+      "Пользователь не найден."
+    );
+
     return;
   }
 
   await supabase
     .from("likes")
     .delete()
-    .or(`from_user.eq.${targetId},to_user.eq.${targetId}`);
+    .or(
+      `from_user.eq.${targetId},to_user.eq.${targetId}`
+    );
 
   await supabase
     .from("reports")
     .delete()
-    .or(`from_user.eq.${targetId},to_user.eq.${targetId}`);
+    .or(
+      `from_user.eq.${targetId},to_user.eq.${targetId}`
+    );
 
-  const { error } = await supabase
-    .from("users")
-    .delete()
-    .eq("id", targetId);
+  const { error } =
+    await supabase
+      .from("users")
+      .delete()
+      .eq(
+        "id",
+        targetId
+      );
 
   if (error) {
-    await sendMessage(adminId, "Ошибка удаления анкеты.");
+    console.log(
+      "DELETE USER ERROR:",
+      error
+    );
+
+    await sendMessage(
+      adminId,
+      "Ошибка удаления анкеты."
+    );
+
     return;
   }
 
   await sendMessage(
     adminId,
-    `🗑 Анкета удалена.\n\nID: ${targetId}\n${user.name || "Без имени"}, ${user.age || "?"}`
+    `🗑 Анкета удалена.\n\n` +
+    `ID: ${targetId}\n` +
+    `${user.name || "Без имени"}, ${user.age || "?"}`
   );
 }
+
 async function showReports(userId) {
   if (!isAdmin(userId)) {
-    await sendMessage(userId, "Нет доступа.");
+    await sendMessage(
+      userId,
+      "Нет доступа."
+    );
+
     return;
   }
 
-  const { data: reports, error } = await supabase
+  const {
+    data: reports,
+    error
+  } = await supabase
     .from("reports")
     .select("*")
-    .order("created_at", { ascending: false })
+    .order(
+      "created_at",
+      {
+        ascending: false
+      }
+    )
     .limit(10);
 
   if (error) {
-    await sendMessage(userId, "Ошибка загрузки жалоб.");
+    await sendMessage(
+      userId,
+      "Ошибка загрузки жалоб."
+    );
+
     return;
   }
 
-  if (!reports || reports.length === 0) {
-    await sendMessage(userId, "Жалоб пока нет.");
+  if (
+    !reports ||
+    reports.length === 0
+  ) {
+    await sendMessage(
+      userId,
+      "Жалоб пока нет."
+    );
+
     return;
   }
 
-  let text = "⚠️ Последние жалобы:\n\n";
+  let text =
+    "⚠️ Последние жалобы:\n\n";
 
   for (const report of reports) {
     text +=
@@ -692,86 +1212,209 @@ async function showReports(userId) {
       `Причина: ${report.reason || "не указана"}\n\n`;
   }
 
-  await sendMessage(userId, text);
+  await sendMessage(
+    userId,
+    text
+  );
 }
 
-async function giveVip(adminId, targetId) {
+async function giveVip(
+  adminId,
+  targetId
+) {
   if (!isAdmin(adminId)) {
-    await sendMessage(adminId, "Нет доступа.");
+    await sendMessage(
+      adminId,
+      "Нет доступа."
+    );
+
     return;
   }
 
-  await updateUser(targetId, { is_vip: true });
+  const user =
+    await getUser(targetId);
 
-  await sendMessage(adminId, `👑 VIP выдан пользователю ${targetId}.`);
+  if (!user) {
+    await sendMessage(
+      adminId,
+      "Пользователь не найден."
+    );
+
+    return;
+  }
+
+  await updateUser(
+    targetId,
+    {
+      is_vip: true
+    }
+  );
+
+  await sendMessage(
+    adminId,
+    `👑 VIP выдан пользователю ${targetId}.`
+  );
 
   await sendMessage(
     targetId,
-    "👑 Администратор выдал тебе VIP.\n\nТеперь доступны премиум-функции ❤️",
+    "👑 Администратор выдал тебе VIP.\n\n" +
+    "Теперь доступны премиум-функции ❤️",
     keyboard()
   );
 }
 
-async function banUser(adminId, targetId) {
+async function banUser(
+  adminId,
+  targetId
+) {
   if (!isAdmin(adminId)) {
-    await sendMessage(adminId, "Нет доступа.");
+    await sendMessage(
+      adminId,
+      "Нет доступа."
+    );
+
     return;
   }
 
-  await updateUser(targetId, { is_banned: true });
+  const user =
+    await getUser(targetId);
 
-  await sendMessage(adminId, `🚫 Пользователь ${targetId} забанен.`);
+  if (!user) {
+    await sendMessage(
+      adminId,
+      "Пользователь не найден."
+    );
+
+    return;
+  }
+
+  await updateUser(
+    targetId,
+    {
+      is_banned: true
+    }
+  );
+
+  await sendMessage(
+    adminId,
+    `🚫 Пользователь ${targetId} забанен.`
+  );
 }
 
-async function unbanUser(adminId, targetId) {
+async function unbanUser(
+  adminId,
+  targetId
+) {
   if (!isAdmin(adminId)) {
-    await sendMessage(adminId, "Нет доступа.");
+    await sendMessage(
+      adminId,
+      "Нет доступа."
+    );
+
     return;
   }
 
-  await updateUser(targetId, { is_banned: false });
+  const user =
+    await getUser(targetId);
 
-  await sendMessage(adminId, `✅ Пользователь ${targetId} разбанен.`);
+  if (!user) {
+    await sendMessage(
+      adminId,
+      "Пользователь не найден."
+    );
+
+    return;
+  }
+
+  await updateUser(
+    targetId,
+    {
+      is_banned: false
+    }
+  );
+
+  await sendMessage(
+    adminId,
+    `✅ Пользователь ${targetId} разбанен.`
+  );
 }
 
-async function createVipCode(adminId, code) {
+async function createVipCode(
+  adminId,
+  code
+) {
   if (!isAdmin(adminId)) {
-    await sendMessage(adminId, "Нет доступа.");
+    await sendMessage(
+      adminId,
+      "Нет доступа."
+    );
+
     return;
   }
 
-  const upperCode = code.toUpperCase();
+  const upperCode =
+    code.toUpperCase();
 
-  const { error } = await supabase
-    .from("vip_codes")
-    .insert([{ code: upperCode }]);
+  const { error } =
+    await supabase
+      .from("vip_codes")
+      .insert([
+        {
+          code: upperCode
+        }
+      ]);
 
   if (error) {
-    await sendMessage(adminId, "Такой код уже есть или ошибка создания.");
+    await sendMessage(
+      adminId,
+      "Такой код уже есть или ошибка создания."
+    );
+
     return;
   }
 
-  await sendMessage(adminId, `✅ VIP-код создан:\n${upperCode}`);
+  await sendMessage(
+    adminId,
+    `✅ VIP-код создан:\n${upperCode}`
+  );
 }
 async function showWhoLiked(userId) {
-  const user = await getUser(userId);
+  const user =
+    await getUser(userId);
+
+  if (!user) {
+    await sendMessage(
+      userId,
+      "Сначала создай анкету."
+    );
+
+    return;
+  }
 
   if (!user.is_vip) {
     await sendMessage(
       userId,
-      "👑 Это VIP-функция.\n\nС VIP ты увидишь, кто поставил тебе лайк ❤️",
+      "👑 Это VIP-функция.\n\n" +
+      "С VIP ты увидишь, кто поставил тебе лайк ❤️",
       keyboard()
     );
 
     return;
   }
 
-  const { data: likes } = await supabase
-    .from("likes")
-    .select("from_user")
-    .eq("to_user", userId);
+  const { data: likes } =
+    await supabase
+      .from("likes")
+      .select("from_user")
+      .eq(
+        "to_user",
+        userId
+      );
 
-  if (!likes || likes.length === 0) {
+  if (
+    !likes ||
+    likes.length === 0
+  ) {
     await sendMessage(
       userId,
       "Пока тебя никто не лайкнул 😔",
@@ -781,12 +1424,21 @@ async function showWhoLiked(userId) {
     return;
   }
 
-  let text = "👑 Тебя лайкнули:\n\n";
+  let text =
+    "👑 Тебя лайкнули:\n\n";
 
-  for (const item of likes.slice(0, 10)) {
-    const liker = await getUser(item.from_user);
+  for (
+    const item of likes.slice(0, 10)
+  ) {
+    const liker =
+      await getUser(
+        item.from_user
+      );
 
-    if (liker && !liker.is_banned) {
+    if (
+      liker &&
+      !liker.is_banned
+    ) {
       text +=
         `❤️ ${liker.name}, ${liker.age}\n` +
         `https://vk.com/id${liker.id}\n\n`;
@@ -801,102 +1453,254 @@ async function showWhoLiked(userId) {
 }
 
 async function processMessage(vkMessage) {
-  const userId = vkMessage.from_id;
-  const text = (vkMessage.text || "").trim();
-  const message = text.toLowerCase();
+  const userId =
+    vkMessage.from_id;
 
-  let user = await getUser(userId);
+  const text =
+    (vkMessage.text || "")
+      .trim();
 
-  if (message === "админ" || message === "статистика") {
-  await showAdminPanel(userId);
-  return;
-}
+  const message =
+    text.toLowerCase();
 
-if (message === "жалобы") {
-  await showReports(userId);
-  return;
-}
+  let user =
+    await getUser(userId);
 
-if (message === "новые анкеты") {
-  await showNewProfiles(userId);
-  return;
-}
+  if (
+    message === "админ" ||
+    message === "статистика"
+  ) {
+    await showAdminPanel(
+      userId
+    );
 
-  if (message.startsWith("поиск ")) {
-  const targetId = Number(message.replace("поиск ", "").trim());
-
-  if (!targetId) {
-    await sendMessage(userId, "Напиши так: поиск 302920827");
-    return;
-  }
-    if (message.startsWith("удалить ")) {
-  const targetId = Number(message.replace("удалить ", "").trim());
-
-  if (!targetId) {
-    await sendMessage(userId, "Напиши так: удалить 302920827");
     return;
   }
 
-  await deleteUserById(userId, targetId);
-  return;
-}
+  if (
+    message === "жалобы"
+  ) {
+    await showReports(
+      userId
+    );
 
-  await searchUserById(userId, targetId);
-  return;
-}
-if (message.startsWith("выдать vip ")) {
-  const targetId = Number(message.replace("выдать vip ", "").trim());
-
-  if (!targetId) {
-    await sendMessage(userId, "Напиши так: выдать vip 302920827");
     return;
   }
 
-  await giveVip(userId, targetId);
-  return;
-}
+  if (
+    message === "новые анкеты"
+  ) {
+    await showNewProfiles(
+      userId
+    );
 
-if (message.startsWith("бан ")) {
-  const targetId = Number(message.replace("бан ", "").trim());
-
-  if (!targetId) {
-    await sendMessage(userId, "Напиши так: бан 302920827");
     return;
   }
 
-  await banUser(userId, targetId);
-  return;
-}
+  if (
+    message.startsWith(
+      "поиск "
+    )
+  ) {
+    const targetId =
+      Number(
+        message
+          .replace(
+            "поиск ",
+            ""
+          )
+          .trim()
+      );
 
-if (message.startsWith("разбан ")) {
-  const targetId = Number(message.replace("разбан ", "").trim());
+    if (!targetId) {
+      await sendMessage(
+        userId,
+        "Напиши так: поиск 302920827"
+      );
 
-  if (!targetId) {
-    await sendMessage(userId, "Напиши так: разбан 302920827");
+      return;
+    }
+
+    await searchUserById(
+      userId,
+      targetId
+    );
+
     return;
   }
 
-  await unbanUser(userId, targetId);
-  return;
-}
+  if (
+    message.startsWith(
+      "удалить "
+    )
+  ) {
+    const targetId =
+      Number(
+        message
+          .replace(
+            "удалить ",
+            ""
+          )
+          .trim()
+      );
 
-if (message.startsWith("код ")) {
-  const code = text.replace("код ", "").trim();
+    if (!targetId) {
+      await sendMessage(
+        userId,
+        "Напиши так: удалить 302920827"
+      );
 
-  if (!code) {
-    await sendMessage(userId, "Напиши так: код VIP-NEW-199");
+      return;
+    }
+
+    await deleteUserById(
+      userId,
+      targetId
+    );
+
     return;
   }
 
-  await createVipCode(userId, code);
-  return;
-}
-  if (text.toUpperCase().startsWith("VIP-")) {
-    await activateVipCode(userId, text);
+  if (
+    message.startsWith(
+      "выдать vip "
+    )
+  ) {
+    const targetId =
+      Number(
+        message
+          .replace(
+            "выдать vip ",
+            ""
+          )
+          .trim()
+      );
+
+    if (!targetId) {
+      await sendMessage(
+        userId,
+        "Напиши так: выдать vip 302920827"
+      );
+
+      return;
+    }
+
+    await giveVip(
+      userId,
+      targetId
+    );
+
+    return;
+  }
+
+  if (
+    message.startsWith(
+      "бан "
+    )
+  ) {
+    const targetId =
+      Number(
+        message
+          .replace(
+            "бан ",
+            ""
+          )
+          .trim()
+      );
+
+    if (!targetId) {
+      await sendMessage(
+        userId,
+        "Напиши так: бан 302920827"
+      );
+
+      return;
+    }
+
+    await banUser(
+      userId,
+      targetId
+    );
+
+    return;
+  }
+
+  if (
+    message.startsWith(
+      "разбан "
+    )
+  ) {
+    const targetId =
+      Number(
+        message
+          .replace(
+            "разбан ",
+            ""
+          )
+          .trim()
+      );
+
+    if (!targetId) {
+      await sendMessage(
+        userId,
+        "Напиши так: разбан 302920827"
+      );
+
+      return;
+    }
+
+    await unbanUser(
+      userId,
+      targetId
+    );
+
+    return;
+  }
+
+  if (
+    message.startsWith(
+      "код "
+    )
+  ) {
+    const code =
+      text
+        .replace(
+          /^код\s+/i,
+          ""
+        )
+        .trim();
+
+    if (!code) {
+      await sendMessage(
+        userId,
+        "Напиши так: код VIP-NEW-199"
+      );
+
+      return;
+    }
+
+    await createVipCode(
+      userId,
+      code
+    );
+
     return;
   }
 
   if (!user) {
+    if (
+      text
+        .toUpperCase()
+        .startsWith("VIP-")
+    ) {
+      await sendMessage(
+        userId,
+        "Сначала напиши «Старт» и создай анкету. После этого активируй VIP-код."
+      );
+
+      return;
+    }
+
     await supabase
       .from("users")
       .insert([
@@ -908,7 +1712,21 @@ if (message.startsWith("код ")) {
 
     await sendMessage(
       userId,
-      "❤️ Добро пожаловать в Vector Love!\n\nНапиши свое имя 👇"
+      "❤️ Добро пожаловать в Vector Love!\n\n" +
+      "Напиши свое имя 👇"
+    );
+
+    return;
+  }
+
+  if (
+    text
+      .toUpperCase()
+      .startsWith("VIP-")
+  ) {
+    await activateVipCode(
+      userId,
+      text
     );
 
     return;
@@ -923,8 +1741,10 @@ if (message.startsWith("код ")) {
 
     return;
   }
-
-  if (message === "смотреть" || message === "👀 смотреть") {
+    if (
+    message === "смотреть" ||
+    message === "👀 смотреть"
+  ) {
     if (user.step !== "done") {
       await sendMessage(
         userId,
@@ -936,50 +1756,76 @@ if (message.startsWith("код ")) {
     }
 
     await showProfile(userId);
-
     return;
   }
 
-  if (message === "лайк" || message === "❤️ лайк") {
+  if (
+    message === "лайк" ||
+    message === "❤️ лайк"
+  ) {
     await handleLike(userId);
     return;
   }
 
-  if (message === "далее" || message === "👎 далее") {
-    await updateUser(userId, {
-      viewing_user: null
-    });
+  if (
+    message === "далее" ||
+    message === "👎 далее"
+  ) {
+    await updateUser(
+      userId,
+      {
+        viewing_user: null
+      }
+    );
 
     await showProfile(userId);
-
     return;
   }
 
-  if (message === "жалоба" || message === "🚫 жалоба") {
+  if (
+    message === "жалоба" ||
+    message === "🚫 жалоба"
+  ) {
     await handleReport(userId);
     return;
   }
 
-  if (message === "кто лайкнул" || message === "👑 кто лайкнул") {
+  if (
+    message === "кто лайкнул" ||
+    message === "👑 кто лайкнул"
+  ) {
     await showWhoLiked(userId);
     return;
   }
 
   if (
-  message === "моя анкета" ||
-  message === "👤 моя анкета"
-) {
+    message === "моя анкета" ||
+    message === "👤 моя анкета"
+  ) {
+    await showMyProfile(userId);
+    return;
+  }
 
-  await showMyProfile(userId);
+  if (
+    message === "лимит" ||
+    message === "📊 лимит"
+  ) {
+    user =
+      await resetViewsIfNeeded(
+        user
+      );
 
-  return;
-}
-  if (message === "лимит" || message === "📊 лимит") {
-    user = await resetViewsIfNeeded(user);
-
-    const left = user.is_vip
-      ? "∞"
-      : Math.max(0, FREE_DAILY_LIMIT - (user.daily_views || 0));
+    const left =
+      user.is_vip
+        ? "∞"
+        : Math.max(
+            0,
+            FREE_DAILY_LIMIT -
+              (
+                user.daily_views ||
+                0
+              )
+          );
 
     await sendMessage(
       userId,
@@ -991,68 +1837,82 @@ if (message.startsWith("код ")) {
   }
 
   if (
-  message === "vip" ||
-  message === "👑 vip"
-) {
-
-  await sendMessage(
-    userId,
-    "👑 VIP — 199₽ / месяц\n\n" +
-    "Оплата через VK Donut ❤️\n\n" +
-    "После оплаты напиши в сообщения сообщества:\n" +
-    "«Хочу VIP-код»\n\n" +
-    "Ты получишь:\n" +
-    "• безлимитный просмотр анкет\n" +
-    "• доступ к «Кто лайкнул»\n" +
-    "• будущие VIP-функции 🔥",
-    keyboard()
-  );
-
-    return;
-}
-
-  if (
-  message === "скрыть" ||
-  message === "🙈 скрыть"
-) {
-
-  await toggleHidden(userId);
-
-  return;
-}
-  if (message === "заново" || message === "🔄 заново") {
-    await updateUser(userId, {
-      name: null,
-      age: null,
-      city: null,
-      gender: null,
-      looking_for: null,
-      about: null,
-      photo: null,
-      viewing_user: null,
-      is_banned: false,
-      step: "name"
-    });
-
+    message === "vip" ||
+    message === "👑 vip"
+  ) {
     await sendMessage(
       userId,
-      "Ок, заполним анкету заново.\n\nНапиши свое имя 👇"
-    );
-
-    return;
-  }
-
-  if ((message === "старт" || message === "начать") && user.step === "done") {
-    await sendMessage(
-      userId,
-      "❤️ Твоя анкета уже создана.\n\nНажми «👀 Смотреть».",
+      "👑 VIP — 199₽ / месяц\n\n" +
+      "Оплата через VK Donut ❤️\n\n" +
+      "После оплаты напиши в сообщения сообщества:\n" +
+      "«Хочу VIP-код»\n\n" +
+      "Ты получишь:\n" +
+      "• безлимитный просмотр анкет\n" +
+      "• доступ к «Кто лайкнул»\n" +
+      "• будущие VIP-функции 🔥",
       keyboard()
     );
 
     return;
   }
 
-  if (message === "старт" || message === "начать") {
+  if (
+    message === "скрыть" ||
+    message === "🙈 скрыть"
+  ) {
+    await toggleHidden(userId);
+    return;
+  }
+
+  if (
+    message === "заново" ||
+    message === "🔄 заново"
+  ) {
+    await updateUser(
+      userId,
+      {
+        name: null,
+        age: null,
+        city: null,
+        gender: null,
+        looking_for: null,
+        about: null,
+        photo: null,
+        viewing_user: null,
+        step: "name"
+      }
+    );
+
+    await sendMessage(
+      userId,
+      "Ок, заполним анкету заново.\n\n" +
+      "Напиши свое имя 👇"
+    );
+
+    return;
+  }
+
+  if (
+    (
+      message === "старт" ||
+      message === "начать"
+    ) &&
+    user.step === "done"
+  ) {
+    await sendMessage(
+      userId,
+      "❤️ Твоя анкета уже создана.\n\n" +
+      "Нажми «👀 Смотреть».",
+      keyboard()
+    );
+
+    return;
+  }
+
+  if (
+    message === "старт" ||
+    message === "начать"
+  ) {
     await sendMessage(
       userId,
       "Продолжаем анкету 👇"
@@ -1061,11 +1921,16 @@ if (message.startsWith("код ")) {
     return;
   }
 
-  if (user.step === "name") {
-    await updateUser(userId, {
-      name: text,
-      step: "age"
-    });
+  if (
+    user.step === "name"
+  ) {
+    await updateUser(
+      userId,
+      {
+        name: text,
+        step: "age"
+      }
+    );
 
     await sendMessage(
       userId,
@@ -1075,22 +1940,35 @@ if (message.startsWith("код ")) {
     return;
   }
 
-  if (user.step === "age") {
-    const age = parseInt(text);
+  if (
+    user.step === "age"
+  ) {
+    const age =
+      parseInt(
+        text,
+        10
+      );
 
-    if (!age || age < 18 || age > 80) {
+    if (
+      !age ||
+      age < 18 ||
+      age > 80
+    ) {
       await sendMessage(
         userId,
-        "Напиши возраст цифрами."
+        "Напиши возраст цифрами от 18 до 80."
       );
 
       return;
     }
 
-    await updateUser(userId, {
-      age,
-      step: "city"
-    });
+    await updateUser(
+      userId,
+      {
+        age,
+        step: "city"
+      }
+    );
 
     await sendMessage(
       userId,
@@ -1100,11 +1978,16 @@ if (message.startsWith("код ")) {
     return;
   }
 
-  if (user.step === "city") {
-    await updateUser(userId, {
-      city: text,
-      step: "gender"
-    });
+  if (
+    user.step === "city"
+  ) {
+    await updateUser(
+      userId,
+      {
+        city: text,
+        step: "gender"
+      }
+    );
 
     await sendMessage(
       userId,
@@ -1115,8 +1998,13 @@ if (message.startsWith("код ")) {
     return;
   }
 
-  if (user.step === "gender") {
-    if (message !== "парень" && message !== "девушка") {
+  if (
+    user.step === "gender"
+  ) {
+    if (
+      message !== "парень" &&
+      message !== "девушка"
+    ) {
       await sendMessage(
         userId,
         "Выбери: Парень или Девушка",
@@ -1126,10 +2014,13 @@ if (message.startsWith("код ")) {
       return;
     }
 
-    await updateUser(userId, {
-      gender: message,
-      step: "looking_for"
-    });
+    await updateUser(
+      userId,
+      {
+        gender: message,
+        step: "looking_for"
+      }
+    );
 
     await sendMessage(
       userId,
@@ -1140,11 +2031,22 @@ if (message.startsWith("код ")) {
     return;
   }
 
-  if (user.step === "looking_for") {
+  if (
+    user.step === "looking_for"
+  ) {
     let lookingFor = null;
 
-    if (message === "ищу парня") lookingFor = "парень";
-    if (message === "ищу девушку") lookingFor = "девушка";
+    if (
+      message === "ищу парня"
+    ) {
+      lookingFor = "парень";
+    }
+
+    if (
+      message === "ищу девушку"
+    ) {
+      lookingFor = "девушка";
+    }
 
     if (!lookingFor) {
       await sendMessage(
@@ -1156,10 +2058,13 @@ if (message.startsWith("код ")) {
       return;
     }
 
-    await updateUser(userId, {
-      looking_for: lookingFor,
-      step: "about"
-    });
+    await updateUser(
+      userId,
+      {
+        looking_for: lookingFor,
+        step: "about"
+      }
+    );
 
     await sendMessage(
       userId,
@@ -1169,11 +2074,16 @@ if (message.startsWith("код ")) {
     return;
   }
 
-  if (user.step === "about") {
-    await updateUser(userId, {
-      about: text,
-      step: "photo"
-    });
+  if (
+    user.step === "about"
+  ) {
+    await updateUser(
+      userId,
+      {
+        about: text,
+        step: "photo"
+      }
+    );
 
     await sendMessage(
       userId,
@@ -1183,8 +2093,13 @@ if (message.startsWith("код ")) {
     return;
   }
 
-  if (user.step === "photo") {
-    const photo = getPhotoAttachment(vkMessage);
+  if (
+    user.step === "photo"
+  ) {
+    const photo =
+      getPhotoAttachment(
+        vkMessage
+      );
 
     if (!photo) {
       await sendMessage(
@@ -1195,21 +2110,27 @@ if (message.startsWith("код ")) {
       return;
     }
 
-    await updateUser(userId, {
-      photo,
-      step: "done"
-    });
+    await updateUser(
+      userId,
+      {
+        photo,
+        step: "done"
+      }
+    );
 
     await sendMessage(
       userId,
-      "🔥 Анкета готова!\n\nТеперь нажми «👀 Смотреть» ❤️",
+      "🔥 Анкета готова!\n\n" +
+      "Теперь нажми «👀 Смотреть» ❤️",
       keyboard()
     );
 
     return;
   }
 
-  if (user.step === "done") {
+  if (
+    user.step === "done"
+  ) {
     await sendMessage(
       userId,
       "Нажми «👀 Смотреть».",
@@ -1220,37 +2141,72 @@ if (message.startsWith("код ")) {
   }
 }
 
-app.post("/", async (req, res) => {
-  try {
-    const body = req.body;
+app.post(
+  "/",
+  async (req, res) => {
+    try {
+      const body =
+        req.body;
 
-    if (body.type === "confirmation") {
-      return res.send(CONFIRMATION_TOKEN);
+      if (
+        body.type ===
+        "confirmation"
+      ) {
+        return res.send(
+          CONFIRMATION_TOKEN
+        );
+      }
+
+      if (
+        body.type ===
+        "message_new"
+      ) {
+        res.send("ok");
+
+        processMessage(
+          body.object.message
+        ).catch(
+          error => {
+            console.log(
+              "PROCESS MESSAGE ERROR:",
+              error
+            );
+          }
+        );
+
+        return;
+      }
+
+      return res.send("ok");
+    } catch (e) {
+      console.log(
+        "GLOBAL ERROR:",
+        e
+      );
+
+      return res.send("ok");
     }
-
-    if (body.type === "message_new") {
-      res.send("ok");
-
-      processMessage(body.object.message).catch(error => {
-        console.log("PROCESS MESSAGE ERROR:", error);
-      });
-
-      return;
-    }
-
-    return res.send("ok");
-  } catch (e) {
-    console.log("GLOBAL ERROR:", e);
-    return res.send("ok");
   }
-});
+);
 
-app.get("/", (req, res) => {
-  res.send("Vector Love bot is running");
-});
+app.get(
+  "/",
+  (req, res) => {
+    res.send(
+      "Vector Love bot is running"
+    );
+  }
+);
 
-const PORT = process.env.PORT || 3000;
+const PORT =
+  process.env.PORT ||
+  3000;
 
-app.listen(PORT, () => {
-  console.log(`Server started on port ${PORT}`);
-});
+app.listen(
+  PORT,
+  () => {
+    console.log(
+      `Server started on port ${PORT}`
+    );
+  }
+);
