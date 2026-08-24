@@ -2,9 +2,9 @@
   "name": "vector-love-bot",
   "version": "1.0.0",
   "description": "VK bot for Vector Love",
-  "main": "app.js",
+  "main": "app_v2.js",
   "scripts": {
-    "start": "node app.js"
+    "start": "node app_v2.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.7",
