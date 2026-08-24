@@ -43,41 +43,41 @@ const extraHelpers = [
   '  if (!shown) text = "💘 Взаимных симпатий пока нет.";',
   '  await sendMessage(userId, text, mainKeyboard());',
   '}'
-].join('\\n');
+].join('\n');
 
 source = source.replace(
   'async function processMessage(vkMessage) {',
-  extraHelpers + '\\n\\nasync function processMessage(vkMessage) {'
+  extraHelpers + '\n\nasync function processMessage(vkMessage) {'
 );
 
 source = source.replace(
   '  if (message === "чёрный список" || message === "📋 чёрный список") { await showBlockList(userId); return; }',
-  '  if (message === "чёрный список" || message === "📋 чёрный список") { await showBlockList(userId); return; }\\n  if (message === "мои матчи" || message === "💘 мои матчи" || message === "матчи") { await showMatches(userId); return; }'
+  '  if (message === "чёрный список" || message === "📋 чёрный список") { await showBlockList(userId); return; }\n  if (message === "мои матчи" || message === "💘 мои матчи" || message === "матчи") { await showMatches(userId); return; }'
 );
 
 source = source.replace(
   /  if \(message === "vip" \|\| message === "👑 vip"\) \{[^\n]*\}\n/,
-  '  if (message === "vip" || message === "👑 vip") { await showVipInfo(userId); return; }\\n'
+  '  if (message === "vip" || message === "👑 vip") { await showVipInfo(userId); return; }\n'
 );
 
 source = source.replace(
   '    await sendMessage(targetId, isVipActive(await normalizeVip(await getUser(targetId))) ? "❤️ Тебя лайкнули! Можешь сразу открыть «👑 Кто лайкнул» 👀" : "❤️ Кому-то понравилась твоя анкета 👀 С VIP можно сразу увидеть, кто это.", mainKeyboard());',
-  '    const likedTarget = await normalizeVip(await getUser(targetId));\\n    await sendMessage(targetId, isVipActive(likedTarget) ? "❤️ Тебя лайкнули! Открой «👑 Кто лайкнул» и посмотри, кто это 👀" : "❤️ Кому-то понравилась твоя анкета 👀", mainKeyboard());'
+  '    const likedTarget = await normalizeVip(await getUser(targetId));\n    await sendMessage(targetId, isVipActive(likedTarget) ? "❤️ Тебя лайкнули! Открой «👑 Кто лайкнул» и посмотри, кто это 👀" : "❤️ Кому-то понравилась твоя анкета 👀", mainKeyboard());'
 );
 
 source = source.replace(
   '  const { error } = await supabase.from("likes").upsert([{ from_user: userId, to_user: targetId }], { onConflict: "from_user,to_user", ignoreDuplicates: true });',
-  '  const { data: existingLike } = await supabase.from("likes").select("from_user").eq("from_user", userId).eq("to_user", targetId).maybeSingle();\\n  if (existingLike) { await sendMessage(userId, "❤️ Ты уже ставил лайк этой анкете.", mainKeyboard()); await updateUser(userId, { viewing_user: null, viewing_mode: "browse" }); return; }\\n  const { error } = await supabase.from("likes").upsert([{ from_user: userId, to_user: targetId }], { onConflict: "from_user,to_user", ignoreDuplicates: true });'
+  '  const { data: existingLike } = await supabase.from("likes").select("from_user").eq("from_user", userId).eq("to_user", targetId).maybeSingle();\n  if (existingLike) { await sendMessage(userId, "❤️ Ты уже ставил лайк этой анкете.", mainKeyboard()); await updateUser(userId, { viewing_user: null, viewing_mode: "browse" }); return; }\n  const { error } = await supabase.from("likes").upsert([{ from_user: userId, to_user: targetId }], { onConflict: "from_user,to_user", ignoreDuplicates: true });'
 );
 
 source = source.replace(
-  '    await sendMessage(userId, \`👑 Лимит просмотров закончился.\\n\\nБесплатно доступно \${FREE_DAILY_LIMIT} анкет в сутки.\`, mainKeyboard());',
-  '    await sendMessage(userId, \`👀 Лимит просмотров на сегодня закончился.\\n\\nБесплатно доступно \${FREE_DAILY_LIMIT} анкет в сутки. Возвращайся завтра ❤️\\n\\nЕсли у тебя есть VIP-код — можешь отправить его сообщением.\`, mainKeyboard());'
+  '    await sendMessage(userId, \`👑 Лимит просмотров закончился.\n\nБесплатно доступно \${FREE_DAILY_LIMIT} анкет в сутки.\`, mainKeyboard());',
+  '    await sendMessage(userId, \`👀 Лимит просмотров на сегодня закончился.\n\nБесплатно доступно \${FREE_DAILY_LIMIT} анкет в сутки. Возвращайся завтра ❤️\n\nЕсли у тебя есть VIP-код — можешь отправить его сообщением.\`, mainKeyboard());'
 );
 
 source = source.replace(
   '  if (!isVipActive(user)) { await sendMessage(userId, "👑 Это VIP-функция. С VIP ты увидишь тех, кто поставил тебе лайк ❤️", mainKeyboard()); return; }',
-  '  if (!isVipActive(user)) { await sendMessage(userId, "👑 «Кто лайкнул» доступно при активном VIP.\\n\\nЕсли у тебя есть VIP-код — отправь его сообщением.", mainKeyboard()); return; }'
+  '  if (!isVipActive(user)) { await sendMessage(userId, "👑 «Кто лайкнул» доступно при активном VIP.\n\nЕсли у тебя есть VIP-код — отправь его сообщением.", mainKeyboard()); return; }'
 );
 `;
 
