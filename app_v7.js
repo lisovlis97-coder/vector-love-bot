@@ -30,12 +30,14 @@ const referralHelpers = [
   '    supabase.from("referrals").select("*",{count:"exact",head:true}).eq("referrer_id",userId),',
   '    supabase.from("referrals").select("*",{count:"exact",head:true}).eq("referrer_id",userId).not("qualified_at","is",null)',
   '  ]);',
+  '  const q = qualified || 0;',
+  '  const left = q % 5 === 0 ? 5 : 5 - (q % 5);',
   '  let text = "🎁 Приглашай друзей в Vector Love\\n\\n";',
   '  text += "За каждые 5 друзей, которые создадут нормальную анкету и начнут пользоваться ботом, ты получишь 👑 VIP на 30 дней.\\n\\n";',
   '  text += "Твой код: " + code + "\\n";',
   '  text += "Ссылка на бот: https://vk.me/vectorloveclub\\n\\n";',
   '  text += "Другу нужно открыть бот и отправить код " + code + " до завершения анкеты.\\n\\n";',
-  '  text += "Приглашено: " + (total || 0) + "\\nЗасчитано: " + (qualified || 0) + "\\nДо следующего VIP: " + (5 - ((qualified || 0) % 5 || 5) === 0 ? 5 : 5 - ((qualified || 0) % 5)) + ".";',
+  '  text += "Приглашено: " + (total || 0) + "\\nЗасчитано: " + q + "\\nДо следующего VIP: " + left + ".";',
   '  await sendMessage(userId,text,mainKeyboard());',
   '}',
   'async function bindReferralCode(inviteeId, code) {',
@@ -45,7 +47,7 @@ const referralHelpers = [
   '  if (!referrerId || referrerId === inviteeId) { await sendMessage(inviteeId,"Этот код использовать нельзя.",mainKeyboard()); return true; }',
   '  const invitee = await getUser(inviteeId);',
   '  if (!invitee) return true;',
-  '  if (invitee.referrer_id) { await sendMessage(inviteeId,"🎁 Реферальный код уже привязан к твоей анкете.",mainKeyboard()); return true; }',
+  '  if (invitee.referrer_id || invitee.step === "done") { await sendMessage(inviteeId,"🎁 Реферальный код можно привязать только один раз до завершения анкеты.",mainKeyboard()); return true; }',
   '  const referrer = await getUser(referrerId);',
   '  if (!referrer || referrer.step !== "done" || referrer.is_banned) { await sendMessage(inviteeId,"Такой реферальный код не найден.",mainKeyboard()); return true; }',
   '  const { error } = await supabase.from("referrals").insert([{referrer_id:referrerId,invitee_id:inviteeId}]);',
@@ -117,21 +119,6 @@ source = source.replace(
 source = source.replace(
   '  if (user.step === "edit_about") { await updateUser(userId,{about:text,step:"done"});',
   '  if (user.step === "edit_about") { if(text.length > 500 || hasForbiddenProfileContent(text)){await logModeration(userId,"profile_spam","edit_about");await sendMessage(userId,"В описании нельзя размещать ссылки, телефоны и контакты.");return true;} await updateUser(userId,{about:text,step:"done"});'
-);
-
-source = source.replace(
-  'async function checkActionLimit(userId, action) {',
-  'async function checkActionLimit(userId, action) {'
-);
-
-source = source.replace(
-  '  const rules = action === "report"\\n    ? { minutes: 60, max: 5, text: "Слишком много жалоб за короткое время. Попробуй позже." }\\n    : { minutes: 10, max: 30, text: "Слишком много действий подряд 😅 Сделай небольшую паузу." };',
-  '  let rules = action === "report" ? { minutes:60,max:5,text:"Слишком много жалоб за короткое время. Попробуй позже." } : { minutes:10,max:30,text:"Слишком много действий подряд 😅 Сделай небольшую паузу." };\\n  if (action !== "report") { const u = await getUser(userId); const created = u && u.created_at ? new Date(u.created_at).getTime() : 0; if (created && Date.now() - created < 60*60*1000) rules = { minutes:10,max:15,text:"Для новой анкеты слишком много действий подряд 😅 Сделай небольшую паузу." }; }'
-);
-
-source = source.replace(
-  '  const text = `🛠 Админка Vector Love',
-  '  const text = `🛠 Админка Vector Love'
 );
 \`;
 
