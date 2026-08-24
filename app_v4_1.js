@@ -5,15 +5,29 @@ const Module = require("module");
 const sourcePath = path.join(__dirname, "app_v4.js");
 let source = fs.readFileSync(sourcePath, "utf8");
 
-// Показываем даты и время пользователю по московскому времени (МСК, UTC+3).
 source = source.replace(
   'function formatDateTimeRu(value) { if (!value) return "—"; const d = new Date(value); return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString("ru-RU"); }',
-  'function formatDateTimeRu(value) { if (!value) return "—"; const d = new Date(value); return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString("ru-RU", { timeZone: "Europe/Moscow", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }); }'
+  'function formatDateTimeRu(value) { if (!value) return "—"; const d = new Date(value); return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString("ru-RU", { timeZone: "Europe/Moscow", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }); }\n\nfunction normalizeCity(value) {\n  let city = String(value || "").trim().toLowerCase().replace(/ё/g, "е").replace(/[.,]/g, " ").replace(/\\s+/g, " ");\n  city = city.replace(/^(г|город)\\s+/, "").replace(/\\s*-\\s*/g, "-");\n  const aliases = {\n    "нн": "нижний новгород",\n    "н новгород": "нижний новгород",\n    "ниж новгород": "нижний новгород",\n    "нижний": "нижний новгород",\n    "нижний новгород": "нижний новгород",\n    "мск": "москва",\n    "москва": "москва",\n    "спб": "санкт-петербург",\n    "с-петербург": "санкт-петербург",\n    "санкт петербург": "санкт-петербург",\n    "санкт-петербург": "санкт-петербург",\n    "питер": "санкт-петербург",\n    "екб": "екатеринбург",\n    "екат": "екатеринбург",\n    "екатеринбург": "екатеринбург",\n    "нск": "новосибирск",\n    "новосибирск": "новосибирск",\n    "ростов": "ростов-на-дону",\n    "ростов на дону": "ростов-на-дону",\n    "ростов-на-дону": "ростов-на-дону",\n    "кзн": "казань",\n    "казань": "казань"\n  };\n  return aliases[city] || city;\n}\n\nfunction canonicalCity(value) {\n  const normalized = normalizeCity(value);\n  const names = {\n    "нижний новгород": "Нижний Новгород",\n    "москва": "Москва",\n    "санкт-петербург": "Санкт-Петербург",\n    "екатеринбург": "Екатеринбург",\n    "новосибирск": "Новосибирск",\n    "ростов-на-дону": "Ростов-на-Дону",\n    "казань": "Казань"\n  };\n  return names[normalized] || String(value || "").trim().replace(/\\s+/g, " ");\n}'
 );
 
 source = source.replace(
   '    [{ action: { type: "text", label: "👀 Смотреть" }, color: "primary" }]\n  ]});\n}\n\nasync function sendMessage',
   '    [{ action: { type: "text", label: "👀 Смотреть дальше" }, color: "primary" }]\n  ]});\n}\n\nasync function sendMessage'
+);
+
+source = source.replace(
+  '  const sameCity = profiles.filter(p => p.city && currentUser.city && p.city.trim().toLowerCase() === currentUser.city.trim().toLowerCase());',
+  '  const sameCity = profiles.filter(p => p.city && currentUser.city && normalizeCity(p.city) === normalizeCity(currentUser.city));'
+);
+
+source = source.replace(
+  '  if (user.step === "edit_city") { if (!text) return true; await updateUser(userId,{city:text,step:"done"}); await sendMessage(userId,"✅ Город изменён.",mainKeyboard()); return true; }',
+  '  if (user.step === "edit_city") { if (!text) return true; const city = canonicalCity(text); await updateUser(userId,{city,step:"done"}); await sendMessage(userId,`✅ Город изменён: ${city}.`,mainKeyboard()); return true; }'
+);
+
+source = source.replace(
+  '  if (user.step === "city") { if(!text){await sendMessage(userId,"Напиши название города.");return;} await updateUser(userId,{city:text,step:"gender"}); await sendMessage(userId,"Кто ты?",genderKeyboard()); return; }',
+  '  if (user.step === "city") { if(!text){await sendMessage(userId,"Напиши название города.");return;} const city = canonicalCity(text); await updateUser(userId,{city,step:"gender"}); await sendMessage(userId,`Запомнил: ${city} 👍\\n\\nКто ты?`,genderKeyboard()); return; }'
 );
 
 source = source.replace(
