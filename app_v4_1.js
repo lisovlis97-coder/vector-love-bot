@@ -5,6 +5,12 @@ const Module = require("module");
 const sourcePath = path.join(__dirname, "app_v4.js");
 let source = fs.readFileSync(sourcePath, "utf8");
 
+// Показываем даты и время пользователю по московскому времени (МСК, UTC+3).
+source = source.replace(
+  'function formatDateTimeRu(value) { if (!value) return "—"; const d = new Date(value); return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString("ru-RU"); }',
+  'function formatDateTimeRu(value) { if (!value) return "—"; const d = new Date(value); return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString("ru-RU", { timeZone: "Europe/Moscow", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }); }'
+);
+
 source = source.replace(
   '    [{ action: { type: "text", label: "👀 Смотреть" }, color: "primary" }]\n  ]});\n}\n\nasync function sendMessage',
   '    [{ action: { type: "text", label: "👀 Смотреть дальше" }, color: "primary" }]\n  ]});\n}\n\nasync function sendMessage'
