@@ -14,7 +14,7 @@ source = source.replace(
 
 const extraHelpers = [
   'function supportKeyboard() {',
-  '  return JSON.stringify({ one_time: false, buttons: [[{ action: { type: "open_link", link: "https://vk.com/im?sel=302920827", label: "💳 Оплатить VIP" } }], [{ action: { type: "text", label: "👀 Смотреть" }, color: "primary" }]] });',
+  '  return JSON.stringify({ one_time: false, buttons: [[{ action: { type: "open_link", link: "https://vk.me/vectorloveclub", label: "💳 Оплатить VIP" } }], [{ action: { type: "text", label: "👀 Смотреть" }, color: "primary" }]] });',
   '}',
   '',
   'async function showSupport(userId) {',
