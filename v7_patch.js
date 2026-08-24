@@ -8,7 +8,11 @@ module.exports = function applyV7(source) {
 function referralCodeFor(userId) { return "VL" + userId; }
 function hasForbiddenProfileContent(value) {
   const s = String(value || "").toLowerCase();
-  return /(https?:\/\/|www\.|vk\.com\/|t\.me\/|wa\.me\/|telegram|телеграм|whatsapp|ватсап|@[a-z0-9_]{3,}|\+?\d[\d\s\-()]{8,})/i.test(s);
+  const blocked = ["http://","https://","www.","vk.com/","t.me/","wa.me/","telegram","телеграм","whatsapp","ватсап","@"]; 
+  if (blocked.some(function(x){ return s.includes(x); })) return true;
+  let digits = 0;
+  for (const ch of s) if (ch >= "0" && ch <= "9") digits += 1;
+  return digits >= 10;
 }
 async function logModeration(userId, reason, details) {
   try { await supabase.from("moderation_events").insert([{ user_id:userId, reason, details:details || null }]); } catch (e) {}
@@ -30,10 +34,10 @@ async function showReferral(userId) {
   await sendMessage(userId,text,mainKeyboard());
 }
 async function bindReferralCode(inviteeId, code) {
-  const match = String(code || "").trim().toUpperCase().match(/^VL(\d+)$/);
-  if (!match) return false;
-  const referrerId = Number(match[1]);
-  if (!referrerId || referrerId === inviteeId) { await sendMessage(inviteeId,"Этот код использовать нельзя.",mainKeyboard()); return true; }
+  const raw = String(code || "").trim().toUpperCase();
+  if (!raw.startsWith("VL")) return false;
+  const referrerId = Number(raw.slice(2));
+  if (!referrerId || String(referrerId) !== raw.slice(2) || referrerId === inviteeId) { await sendMessage(inviteeId,"Этот код использовать нельзя.",mainKeyboard()); return true; }
   const invitee = await getUser(inviteeId);
   if (!invitee) return true;
   if (invitee.referrer_id || invitee.step === "done") { await sendMessage(inviteeId,"🎁 Реферальный код можно привязать только один раз до завершения анкеты.",mainKeyboard()); return true; }
@@ -79,7 +83,7 @@ async function tryQualifyReferral(inviteeId) {
 
   source = source.replace(
     '  if (text.toUpperCase().startsWith("VIP-")) { await activateVipCode(userId,text); return; }',
-    '  if (text.toUpperCase().startsWith("VIP-")) { await activateVipCode(userId,text); return; }\n  if (/^VL\\d+$/i.test(text)) { if (await bindReferralCode(userId,text)) return; }'
+    '  if (text.toUpperCase().startsWith("VIP-")) { await activateVipCode(userId,text); return; }\n  if (text.toUpperCase().startsWith("VL")) { if (await bindReferralCode(userId,text)) return; }'
   );
 
   source = source.replace(
