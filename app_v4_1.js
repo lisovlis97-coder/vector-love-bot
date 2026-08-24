@@ -7,7 +7,7 @@ let source = fs.readFileSync(sourcePath, "utf8");
 
 source = source.replace(
   'function isBoostActive(user) { return Boolean(user?.boosted_until && new Date(user.boosted_until).getTime() > Date.now()); }',
-  'function isBoostActive(user) { return Boolean(user?.boosted_until && new Date(user.boosted_until).getTime() > Date.now()); }\nfunction hasPhoto(user) { return Boolean(user?.photo && String(user.photo).trim()); }\nfunction activityBadge(user) {\n  const value = user?.last_active_at || user?.created_at;\n  if (!value) return "";\n  const t = new Date(value).getTime();\n  if (!Number.isFinite(t)) return "";\n  const hours = (Date.now() - t) / 3600000;\n  if (hours <= 24) return "🟢 Был(а) недавно";\n  if (hours <= 72) return "🟡 Был(а) на днях";\n  return "";\n}\nfunction profileBadges(user) {\n  const badges = [];\n  if (isBoostActive(user)) badges.push("🔥 Буст");\n  else if (isVipActive(user)) badges.push("👑 VIP");\n  const activity = activityBadge(user);\n  if (activity) badges.push(activity);\n  return badges.join(" • ");\n}'
+  'function isBoostActive(user) { return Boolean(user?.boosted_until && new Date(user.boosted_until).getTime() > Date.now()); }\nfunction hasPhoto(user) { return Boolean(user?.photo && String(user.photo).trim()); }\nfunction activityBadge(user) {\n  const value = user?.last_active_at || user?.created_at;\n  if (!value) return "";\n  const t = new Date(value).getTime();\n  if (!Number.isFinite(t)) return "";\n  const hours = (Date.now() - t) / 3600000;\n  if (hours <= 24) return "🟢 Был(а) недавно";\n  if (hours <= 72) return "🟡 Был(а) на днях";\n  if (hours <= 168) return "🔵 Был(а) на этой неделе";\n  return "";\n}\nfunction profileBadges(user) {\n  const badges = [];\n  if (isBoostActive(user)) badges.push("🔥 Буст");\n  else if (isVipActive(user)) badges.push("👑 VIP");\n  const activity = activityBadge(user);\n  if (activity) badges.push(activity);\n  return badges.join(" • ");\n}'
 );
 
 source = source.replace(
@@ -94,6 +94,21 @@ source = source.replace(
   '  if (user.step === "photo") { const photo=getPhotoAttachment(vkMessage); if(!photo){await sendMessage(userId,"Отправь именно фото 📸");return;} await updateUser(userId,{photo,step:"done",age_min:user.age_min||18,age_max:user.age_max||80,viewing_mode:"browse"}); await sendMessage(userId,"🔥 Анкета готова! Теперь нажми «👀 Смотреть» ❤️",mainKeyboard()); return; }',
   '  if (user.step === "photo") { const photo=getPhotoAttachment(vkMessage); if(!photo){await sendMessage(userId,"📸 Фото обязательно. Отправь именно фотографию, чтобы завершить анкету.");return;} await updateUser(userId,{photo,step:"done",age_min:user.age_min||18,age_max:user.age_max||80,viewing_mode:"browse",last_active_at:new Date().toISOString()}); await sendMessage(userId,"🔥 Анкета готова! Теперь нажми «👀 Смотреть» ❤️",mainKeyboard()); const freshProfile = await getUser(userId); notifyAboutNewProfile(freshProfile).catch(e=>console.log("NOTIFY ERROR:",e.message)); return; }'
 );
+
+source = source.replace(
+  /function getPhotoAttachment\(vkMessage\) \{[\s\S]*?\n\}/,
+  'function getPhotoAttachment(vkMessage) {\n  const photoAttachment = (vkMessage.attachments || []).find(item => item.type === "photo");\n  if (!photoAttachment) return null;\n  const photo = photoAttachment.photo;\n  return "photo" + photo.owner_id + "_" + photo.id + (photo.access_key ? "_" + photo.access_key : "");\n}'
+);
+
+source = source.replaceAll("💘 У ВАС ВЗАИМНАЯ СИМПАТИЯ!", "💘 Взаимная симпатия!");
+source = source.replaceAll("Нажми «💌 Написать» — и начинай знакомство 😊", "Вы понравились друг другу ❤️\n\nСамое время написать и познакомиться поближе 😉");
+source = source.replace(
+  '    await sendMessage(targetId, "❤️ Тебя кто-то лайкнул!\\n\\nНажми «👑 Кто лайкнул», чтобы посмотреть.", mainKeyboard());',
+  '    await sendMessage(targetId, isVipActive(await normalizeVip(await getUser(targetId))) ? "❤️ Тебя лайкнули! Можешь сразу открыть «👑 Кто лайкнул» 👀" : "❤️ Кому-то понравилась твоя анкета 👀 С VIP можно сразу увидеть, кто это.", mainKeyboard());'
+);
+source = source.replaceAll("👑 VIP — 199₽ / месяц", "👑 Vector Love VIP — 199 ₽ / месяц");
+source = source.replaceAll("• «Кто лайкнул» карточками", "• сразу видно, кто тебя лайкнул");
+source = source.replaceAll("• приоритет в выдаче", "• анкета показывается чаще");
 
 const patched = new Module(sourcePath, module.parent);
 patched.filename = sourcePath;
