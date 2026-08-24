@@ -16,6 +16,11 @@ source = source.replace(
 );
 
 source = source.replace(
+  'function weightedPick(profiles) {\n  if (!profiles.length) return null;\n  const weighted = [];\n  for (const profile of profiles) {\n    let weight = 1;\n    if (isVipActive(profile)) weight = 3;\n    if (isBoostActive(profile)) weight = 8;\n    for (let i = 0; i < weight; i += 1) weighted.push(profile);\n  }\n  return weighted[Math.floor(Math.random() * weighted.length)];\n}',
+  'function weightedPick(profiles) {\n  if (!profiles.length) return null;\n  const now = Date.now();\n  const weighted = [];\n  for (const profile of profiles) {\n    let weight = 2;\n    if (isVipActive(profile)) weight += 2;\n    if (isBoostActive(profile)) weight += 7;\n\n    const activeAt = profile.last_active_at ? new Date(profile.last_active_at).getTime() : 0;\n    const activeHours = activeAt ? (now - activeAt) / 3600000 : Infinity;\n    if (activeHours <= 24) weight += 5;\n    else if (activeHours <= 72) weight += 3;\n    else if (activeHours <= 168) weight += 1;\n\n    const createdAt = profile.created_at ? new Date(profile.created_at).getTime() : 0;\n    const ageDays = createdAt ? (now - createdAt) / 86400000 : Infinity;\n    if (ageDays <= 3) weight += 3;\n    else if (ageDays <= 14) weight += 1;\n\n    for (let i = 0; i < weight; i += 1) weighted.push(profile);\n  }\n  return weighted[Math.floor(Math.random() * weighted.length)];\n}'
+);
+
+source = source.replace(
   '  const sameCity = profiles.filter(p => p.city && currentUser.city && p.city.trim().toLowerCase() === currentUser.city.trim().toLowerCase());',
   '  const sameCity = profiles.filter(p => p.city && currentUser.city && normalizeCity(p.city) === normalizeCity(currentUser.city));'
 );
@@ -28,6 +33,11 @@ source = source.replace(
 source = source.replace(
   '  if (user.step === "city") { if(!text){await sendMessage(userId,"Напиши название города.");return;} await updateUser(userId,{city:text,step:"gender"}); await sendMessage(userId,"Кто ты?",genderKeyboard()); return; }',
   '  if (user.step === "city") { if(!text){await sendMessage(userId,"Напиши название города.");return;} const city = canonicalCity(text); await updateUser(userId,{city,step:"gender"}); await sendMessage(userId,`Запомнил: ${city} 👍\\n\\nКто ты?`,genderKeyboard()); return; }'
+);
+
+source = source.replace(
+  '  let user = await getUser(userId);\n\n  if (message === "админ" || message === "статистика")',
+  '  let user = await getUser(userId);\n  if (user) {\n    const lastActive = user.last_active_at ? new Date(user.last_active_at).getTime() : 0;\n    if (!lastActive || Date.now() - lastActive > 5 * 60 * 1000) {\n      await updateUser(userId, { last_active_at: new Date().toISOString() });\n      user.last_active_at = new Date().toISOString();\n    }\n  }\n\n  if (message === "админ" || message === "статистика")'
 );
 
 source = source.replace(
