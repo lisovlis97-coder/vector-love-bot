@@ -53,8 +53,8 @@ source = source.replace(
 );
 
 source = source.replace(
-  '  if (message === "vip" || message === "👑 vip") { await sendMessage(userId,`👑 VIP — 199₽ / месяц\\n\\n• безлимитный просмотр\\n• «Кто лайкнул» карточками\\n• приоритет в выдаче\\n• 🔥 буст раз в сутки${isVipActive(user)?`\\n\\n✅ VIP активен${user.vip_until?` до ${formatDateRu(user.vip_until)}`:""}.`:""}`,mainKeyboard()); return; }',
-  '  if (message === "vip" || message === "👑 vip") { await showVipScreen(userId); return; }'
+  /  if \\(message === "vip" \\|\\| message === "👑 vip"\\) \\{[^\\n]*\\n?/,
+  '  if (message === "vip" || message === "👑 vip") { await showVipScreen(userId); return; }\\n'
 );
 
 source = source.replace(
